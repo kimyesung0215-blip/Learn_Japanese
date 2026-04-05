@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="日本語" />
+  <meta name="theme-color" content="#1a1a2e" />
+  <meta name="description" content="미래엔 2022개정 고등학교 일본어 I 학습앱 — 오십음도, 단어암기, 퀴즈" />
+  <title>일본어 학습</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="apple-touch-icon" href="./icons/icon-192x192.png" />
+  <link rel="icon" type="image/png" href="./icons/favicon.png" />
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- React + Babel (standalone) -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="text/babel">
+const { useState, useMemo } = React;
+
+// ===== DATA =====
+const HIRAGANA = [
+  { char: "あ", rom: "a", row: "あ행" }, { char: "い", rom: "i", row: "あ행" }, { char: "う", rom: "u", row: "あ행" }, { char: "え", rom: "e", row: "あ행" }, { char: "お", rom: "o", row: "あ행" },
+  { char: "か", rom: "ka", row: "か행" }, { char: "き", rom: "ki", row: "か행" }, { char: "く", rom: "ku", row: "か행" }, { char: "け", rom: "ke", row: "か행" }, { char: "こ", rom: "ko", row: "か행" },
+  { char: "さ", rom: "sa", row: "さ행" }, { char: "し", rom: "shi", row: "さ행" }, { char: "す", rom: "su", row: "さ행" }, { char: "せ", rom: "se", row: "さ행" }, { char: "そ", rom: "so", row: "さ행" },
+  { char: "た", rom: "ta", row: "た행" }, { char: "ち", rom: "chi", row: "た행" }, { char: "つ", rom: "tsu", row: "た행" }, { char: "て", rom: "te", row: "た행" }, { char: "と", rom: "to", row: "た행" },
+  { char: "な", rom: "na", row: "な행" }, { char: "に", rom: "ni", row: "な행" }, { char: "ぬ", rom: "nu", row: "な행" }, { char: "ね", rom: "ne", row: "な행" }, { char: "の", rom: "no", row: "な행" },
+  { char: "は", rom: "ha", row: "は행" }, { char: "ひ", rom: "hi", row: "は행" }, { char: "ふ", rom: "fu", row: "は행" }, { char: "へ", rom: "he", row: "は행" }, { char: "ほ", rom: "ho", row: "は행" },
+  { char: "ま", rom: "ma", row: "ま행" }, { char: "み", rom: "mi", row: "ま행" }, { char: "む", rom: "mu", row: "ま행" }, { char: "め", rom: "me", row: "ま행" }, { char: "も", rom: "mo", row: "ま행" },
+  { char: "や", rom: "ya", row: "や행" }, { char: "　", rom: "", row: "や행" }, { char: "ゆ", rom: "yu", row: "や행" }, { char: "　", rom: "", row: "や행" }, { char: "よ", rom: "yo", row: "や행" },
+  { char: "ら", rom: "ra", row: "ら행" }, { char: "り", rom: "ri", row: "ら행" }, { char: "る", rom: "ru", row: "ら행" }, { char: "れ", rom: "re", row: "ら행" }, { char: "ろ", rom: "ro", row: "ら행" },
+  { char: "わ", rom: "wa", row: "わ행" }, { char: "　", rom: "", row: "わ행" }, { char: "　", rom: "", row: "わ행" }, { char: "　", rom: "", row: "わ행" }, { char: "を", rom: "wo", row: "わ행" },
+  { char: "ん", rom: "n", row: "ん" }, { char: "　", rom: "", row: "ん" }, { char: "　", rom: "", row: "ん" }, { char: "　", rom: "", row: "ん" }, { char: "　", rom: "", row: "ん" },
+];
+const KATAKANA = [
+  { char: "ア", rom: "a", row: "ア행" }, { char: "イ", rom: "i", row: "ア행" }, { char: "ウ", rom: "u", row: "ア행" }, { char: "エ", rom: "e", row: "ア행" }, { char: "オ", rom: "o", row: "ア행" },
+  { char: "カ", rom: "ka", row: "カ행" }, { char: "キ", rom: "ki", row: "カ행" }, { char: "ク", rom: "ku", row: "カ행" }, { char: "ケ", rom: "ke", row: "カ행" }, { char: "コ", rom: "ko", row: "カ행" },
+  { char: "サ", rom: "sa", row: "サ행" }, { char: "シ", rom: "shi", row: "サ행" }, { char: "ス", rom: "su", row: "サ행" }, { char: "セ", rom: "se", row: "サ행" }, { char: "ソ", rom: "so", row: "サ행" },
+  { char: "タ", rom: "ta", row: "タ행" }, { char: "チ", rom: "chi", row: "タ행" }, { char: "ツ", rom: "tsu", row: "タ행" }, { char: "テ", rom: "te", row: "タ행" }, { char: "ト", rom: "to", row: "タ행" },
+  { char: "ナ", rom: "na", row: "ナ행" }, { char: "ニ", rom: "ni", row: "ナ행" }, { char: "ヌ", rom: "nu", row: "ナ행" }, { char: "ネ", rom: "ne", row: "ナ행" }, { char: "ノ", rom: "no", row: "ナ행" },
+  { char: "ハ", rom: "ha", row: "ハ행" }, { char: "ヒ", rom: "hi", row: "ハ행" }, { char: "フ", rom: "fu", row: "ハ행" }, { char: "ヘ", rom: "he", row: "ハ행" }, { char: "ホ", rom: "ho", row: "ハ행" },
+  { char: "マ", rom: "ma", row: "マ행" }, { char: "ミ", rom: "mi", row: "マ행" }, { char: "ム", rom: "mu", row: "マ행" }, { char: "メ", rom: "me", row: "マ행" }, { char: "モ", rom: "mo", row: "マ행" },
+  { char: "ヤ", rom: "ya", row: "ヤ행" }, { char: "　", rom: "", row: "ヤ행" }, { char: "ユ", rom: "yu", row: "ヤ행" }, { char: "　", rom: "", row: "ヤ행" }, { char: "ヨ", rom: "yo", row: "ヤ행" },
+  { char: "ラ", rom: "ra", row: "ラ행" }, { char: "リ", rom: "ri", row: "ラ행" }, { char: "ル", rom: "ru", row: "ラ행" }, { char: "レ", rom: "re", row: "ラ행" }, { char: "ロ", rom: "ro", row: "ラ행" },
+  { char: "ワ", rom: "wa", row: "ワ행" }, { char: "　", rom: "", row: "ワ행" }, { char: "　", rom: "", row: "ワ행" }, { char: "　", rom: "", row: "ワ행" }, { char: "ヲ", rom: "wo", row: "ワ행" },
+  { char: "ン", rom: "n", row: "ン" }, { char: "　", rom: "", row: "ン" }, { char: "　", rom: "", row: "ン" }, { char: "　", rom: "", row: "ン" }, { char: "　", rom: "", row: "ン" },
+];
+const VOCAB = [
+  // あ
+  { jp: "合う", read: "あう", kr: "만나다" },
+  { jp: "上がる", read: "あがる", kr: "올라가다" },
+  { jp: "朝", read: "あさ", kr: "아침" },
+  { jp: "明日", read: "あした", kr: "내일" },
+  { jp: "あそこ", read: "あそこ", kr: "저기, 저곳" },
+  { jp: "遊ぶ", read: "あそぶ", kr: "놀다" },
+  { jp: "あちら", read: "あちら", kr: "저쪽" },
+  { jp: "暑い", read: "あつい", kr: "덥다" },
+  { jp: "兄", read: "あに", kr: "형, 오빠" },
+  { jp: "アニメ", read: "アニメ", kr: "애니메이션" },
+  { jp: "姉", read: "あね", kr: "누나, 언니" },
+  { jp: "あの", read: "あの", kr: "저, 저기" },
+  { jp: "アパート", read: "アパート", kr: "다세대 주택" },
+  { jp: "アメリカ", read: "アメリカ", kr: "미국" },
+  { jp: "ある", read: "ある", kr: "있다 (사물 등)" },
+  { jp: "歩く", read: "あるく", kr: "걷다" },
+  { jp: "あれ", read: "あれ", kr: "저, 저것" },
+  // い
+  { jp: "家", read: "いえ", kr: "집" },
+  { jp: "行く", read: "いく", kr: "가다" },
+  { jp: "いくつ", read: "いくつ", kr: "몇 개" },
+  { jp: "いくら", read: "いくら", kr: "얼마" },
+  { jp: "医者", read: "いしゃ", kr: "의사" },
+  { jp: "椅子", read: "いす", kr: "의자" },
+  { jp: "一", read: "いち", kr: "1, 일" },
+  { jp: "いちご", read: "いちご", kr: "딸기" },
+  { jp: "一番", read: "いちばん", kr: "가장, 제일" },
+  { jp: "いつ", read: "いつ", kr: "언제" },
+  { jp: "一緒", read: "いっしょ", kr: "함께함" },
+  { jp: "いっぱい", read: "いっぱい", kr: "가득" },
+  { jp: "犬", read: "いぬ", kr: "개" },
+  { jp: "今", read: "いま", kr: "지금" },
+  { jp: "妹", read: "いもうと", kr: "여동생" },
+  { jp: "いる", read: "いる", kr: "있다 (사람·동물)" },
+  { jp: "いらっしゃい", read: "いらっしゃい", kr: "어서 오세요" },
+  // う
+  { jp: "上", read: "うえ", kr: "위" },
+  { jp: "後ろ", read: "うしろ", kr: "뒤" },
+  { jp: "歌", read: "うた", kr: "노래" },
+  { jp: "歌う", read: "うたう", kr: "노래하다" },
+  { jp: "うち", read: "うち", kr: "안" },
+  { jp: "うどん", read: "うどん", kr: "우동" },
+  { jp: "海", read: "うみ", kr: "바다" },
+  { jp: "うれしい", read: "うれしい", kr: "기쁘다" },
+  // え
+  { jp: "絵", read: "え", kr: "그림" },
+  { jp: "映画", read: "えいが", kr: "영화" },
+  { jp: "英語", read: "えいご", kr: "영어" },
+  { jp: "駅", read: "えき", kr: "역" },
+  // お
+  { jp: "おいしい", read: "おいしい", kr: "맛있다" },
+  { jp: "多い", read: "おおい", kr: "많다" },
+  { jp: "お母さん", read: "おかあさん", kr: "어머니" },
+  { jp: "起きる", read: "おきる", kr: "일어나다" },
+  { jp: "お父さん", read: "おとうさん", kr: "아버지" },
+  { jp: "弟", read: "おとうと", kr: "남동생" },
+  { jp: "鬼", read: "おに", kr: "귀신" },
+  { jp: "お兄さん", read: "おにいさん", kr: "형, 오빠" },
+  { jp: "お姉さん", read: "おねえさん", kr: "누나, 언니" },
+  { jp: "お婆さん", read: "おばあさん", kr: "할머니" },
+  { jp: "おばさん", read: "おばさん", kr: "아주머니" },
+  { jp: "お祖父さん", read: "おじいさん", kr: "할아버지" },
+  { jp: "おじさん", read: "おじさん", kr: "아저씨" },
+  { jp: "お土産", read: "おみやげ", kr: "선물" },
+  { jp: "面白い", read: "おもしろい", kr: "재미있다" },
+  { jp: "泳ぐ", read: "およぐ", kr: "수영하다" },
+  { jp: "音楽", read: "おんがく", kr: "음악" },
+  { jp: "温泉", read: "おんせん", kr: "온천" },
+  // か
+  { jp: "外国", read: "がいこく", kr: "외국" },
+  { jp: "会社", read: "かいしゃ", kr: "회사" },
+  { jp: "買う", read: "かう", kr: "사다" },
+  { jp: "帰る", read: "かえる", kr: "돌아가(오)다" },
+  { jp: "顔", read: "かお", kr: "얼굴" },
+  { jp: "書く", read: "かく", kr: "쓰다" },
+  { jp: "菓子", read: "かし", kr: "과자" },
+  { jp: "家族", read: "かぞく", kr: "가족" },
+  { jp: "勝つ", read: "かつ", kr: "이기다" },
+  { jp: "学校", read: "がっこう", kr: "학교" },
+  { jp: "かばん", read: "かばん", kr: "가방" },
+  { jp: "カフェ", read: "カフェ", kr: "카페" },
+  { jp: "紙", read: "かみ", kr: "종이" },
+  { jp: "カラオケ", read: "カラオケ", kr: "노래방" },
+  { jp: "借りる", read: "かりる", kr: "빌리다" },
+  { jp: "カルタ", read: "カルタ", kr: "카루타" },
+  { jp: "カレー", read: "カレー", kr: "카레" },
+  { jp: "かわいい", read: "かわいい", kr: "귀엽다" },
+  { jp: "韓国", read: "かんこく", kr: "한국" },
+  { jp: "漢字", read: "かんじ", kr: "한자" },
+  // き
+  { jp: "聞く", read: "きく", kr: "듣다" },
+  { jp: "切符", read: "きっぷ", kr: "표" },
+  { jp: "昨日", read: "きのう", kr: "어제" },
+  { jp: "キムチ", read: "キムチ", kr: "김치" },
+  { jp: "着物", read: "きもの", kr: "기모노" },
+  { jp: "九", read: "きゅう", kr: "9, 구" },
+  { jp: "今日", read: "きょう", kr: "오늘" },
+  { jp: "嫌いだ", read: "きらいだ", kr: "싫어하다" },
+  { jp: "着る", read: "きる", kr: "입다" },
+  { jp: "きれいだ", read: "きれいだ", kr: "예쁘다, 깨끗하다" },
+  { jp: "銀行", read: "ぎんこう", kr: "은행" },
+  // く
+  { jp: "果物", read: "くだもの", kr: "과일" },
+  { jp: "国", read: "くに", kr: "나라, 국가" },
+  { jp: "来る", read: "くる", kr: "오다" },
+  // け
+  { jp: "ケーキ", read: "ケーキ", kr: "케이크" },
+  { jp: "ゲーム", read: "ゲーム", kr: "게임" },
+  { jp: "下駄", read: "げた", kr: "게다" },
+  { jp: "健康", read: "けんこう", kr: "건강" },
+  // こ
+  { jp: "公園", read: "こうえん", kr: "공원" },
+  { jp: "合格", read: "ごうかく", kr: "합격" },
+  { jp: "高校生", read: "こうこうせい", kr: "고등학생" },
+  { jp: "交番", read: "こうばん", kr: "파출소" },
+  { jp: "コーヒー", read: "コーヒー", kr: "커피" },
+  { jp: "コーラ", read: "コーラ", kr: "콜라" },
+  { jp: "ここ", read: "ここ", kr: "여기" },
+  { jp: "午後", read: "ごご", kr: "오후" },
+  { jp: "こたつ", read: "こたつ", kr: "고타츠" },
+  { jp: "言葉", read: "ことば", kr: "말, 단어" },
+  { jp: "今年", read: "ことし", kr: "올해" },
+  { jp: "子ども", read: "こども", kr: "아이, 어린이" },
+  { jp: "ごはん", read: "ごはん", kr: "밥" },
+  { jp: "コピー", read: "コピー", kr: "복사" },
+  { jp: "ごみ", read: "ごみ", kr: "쓰레기" },
+  { jp: "ごめん", read: "ごめん", kr: "미안해" },
+  { jp: "これ", read: "これ", kr: "이것" },
+  { jp: "コンビニ", read: "コンビニ", kr: "편의점" },
+  { jp: "午前", read: "ごぜん", kr: "오전" },
+  // さ
+  { jp: "財布", read: "さいふ", kr: "지갑" },
+  { jp: "去年", read: "さくねん", kr: "작년" },
+  { jp: "桜", read: "さくら", kr: "벚꽃" },
+  { jp: "サッカー", read: "サッカー", kr: "축구" },
+  { jp: "寒い", read: "さむい", kr: "춥다" },
+  { jp: "三", read: "さん", kr: "3, 삼" },
+  { jp: "散歩", read: "さんぽ", kr: "산책" },
+  // し
+  { jp: "仕事", read: "しごと", kr: "일" },
+  { jp: "静かだ", read: "しずかだ", kr: "조용하다" },
+  { jp: "七", read: "しち", kr: "7, 칠" },
+  { jp: "自転車", read: "じてんしゃ", kr: "자전거" },
+  { jp: "死ぬ", read: "しぬ", kr: "죽다" },
+  { jp: "写真", read: "しゃしん", kr: "사진" },
+  { jp: "シャツ", read: "シャツ", kr: "셔츠" },
+  { jp: "十", read: "じゅう", kr: "10, 십" },
+  { jp: "自由", read: "じゆう", kr: "자유" },
+  { jp: "ジュース", read: "ジュース", kr: "주스" },
+  { jp: "週末", read: "しゅうまつ", kr: "주말" },
+  { jp: "授業", read: "じゅぎょう", kr: "수업" },
+  { jp: "宿題", read: "しゅくだい", kr: "숙제" },
+  { jp: "趣味", read: "しゅみ", kr: "취미" },
+  { jp: "紹介", read: "しょうかい", kr: "소개" },
+  { jp: "将来", read: "しょうらい", kr: "장래" },
+  { jp: "上手だ", read: "じょうずだ", kr: "잘하다, 능숙하다" },
+  { jp: "新幹線", read: "しんかんせん", kr: "신칸센" },
+  { jp: "親切だ", read: "しんせつだ", kr: "친절하다" },
+  // す
+  { jp: "数学", read: "すうがく", kr: "수학" },
+  { jp: "スーパー", read: "スーパー", kr: "슈퍼마켓" },
+  { jp: "スキー", read: "スキー", kr: "스키" },
+  { jp: "好きだ", read: "すきだ", kr: "좋아하다" },
+  { jp: "すごい", read: "すごい", kr: "대단하다, 굉장하다" },
+  { jp: "すし", read: "すし", kr: "초밥" },
+  { jp: "素敵だ", read: "すてきだ", kr: "멋지다" },
+  { jp: "スポーツ", read: "スポーツ", kr: "스포츠" },
+  { jp: "ズボン", read: "ズボン", kr: "바지" },
+  { jp: "スマホ", read: "スマホ", kr: "스마트폰" },
+  { jp: "すみません", read: "すみません", kr: "저기요, 미안합니다" },
+  { jp: "相撲", read: "すもう", kr: "스모" },
+  { jp: "する", read: "する", kr: "하다" },
+  // せ
+  { jp: "世界", read: "せかい", kr: "세계" },
+  { jp: "先生", read: "せんせい", kr: "선생님" },
+  { jp: "千", read: "せん", kr: "천" },
+  // そ
+  { jp: "掃除", read: "そうじ", kr: "청소" },
+  { jp: "そこ", read: "そこ", kr: "거기" },
+  { jp: "外", read: "そと", kr: "바깥, 밖" },
+  { jp: "そば", read: "そば", kr: "메밀국수" },
+  // た
+  { jp: "体育", read: "たいいく", kr: "체육" },
+  { jp: "大会", read: "たいかい", kr: "대회" },
+  { jp: "大丈夫だ", read: "だいじょうぶだ", kr: "괜찮다" },
+  { jp: "高い", read: "たかい", kr: "비싸다, 높다" },
+  { jp: "たこやき", read: "たこやき", kr: "타코야키" },
+  { jp: "だいきち", read: "だいきち", kr: "대길, 운이 좋음" },
+  { jp: "楽しい", read: "たのしい", kr: "즐겁다" },
+  { jp: "たび", read: "たび", kr: "다비" },
+  { jp: "食べる", read: "たべる", kr: "먹다" },
+  { jp: "ダンス", read: "ダンス", kr: "춤" },
+  { jp: "誕生日", read: "たんじょうび", kr: "생일" },
+  { jp: "短冊", read: "たんざく", kr: "단지쿠" },
+  // ち
+  { jp: "小さい", read: "ちいさい", kr: "작다" },
+  { jp: "近い", read: "ちかい", kr: "가깝다" },
+  { jp: "地下鉄", read: "ちかてつ", kr: "지하철" },
+  { jp: "父", read: "ちち", kr: "아버지" },
+  { jp: "チョコレート", read: "チョコレート", kr: "초콜릿" },
+  { jp: "ちょっと", read: "ちょっと", kr: "조금, 잠깐" },
+  // つ
+  { jp: "使う", read: "つかう", kr: "사용하다" },
+  { jp: "机", read: "つくえ", kr: "책상" },
+  { jp: "作る", read: "つくる", kr: "만들다" },
+  { jp: "つゆ", read: "つゆ", kr: "쓰유" },
+  // て
+  { jp: "テスト", read: "テスト", kr: "시험" },
+  { jp: "手伝う", read: "てつだう", kr: "도와주다" },
+  { jp: "テニス", read: "テニス", kr: "테니스" },
+  { jp: "テレビ", read: "テレビ", kr: "텔레비전" },
+  { jp: "電車", read: "でんしゃ", kr: "전철" },
+  { jp: "天ぷら", read: "てんぷら", kr: "튀김" },
+  { jp: "デパート", read: "デパート", kr: "백화점" },
+  // と
+  { jp: "トイレ", read: "トイレ", kr: "화장실" },
+  { jp: "東京", read: "とうきょう", kr: "도쿄" },
+  { jp: "どう", read: "どう", kr: "어떻게" },
+  { jp: "どうぞ", read: "どうぞ", kr: "들어오세요, 받으세요" },
+  { jp: "どうも", read: "どうも", kr: "정말" },
+  { jp: "どか", read: "とか", kr: "~랑" },
+  { jp: "時計", read: "とけい", kr: "시계" },
+  { jp: "図書館", read: "としょかん", kr: "도서관" },
+  { jp: "どちら", read: "どちら", kr: "어느 쪽, 어디" },
+  { jp: "とても", read: "とても", kr: "매우" },
+  { jp: "隣", read: "となり", kr: "(바로) 옆" },
+  { jp: "友だち", read: "ともだち", kr: "친구" },
+  { jp: "どれ", read: "どれ", kr: "어느 것" },
+  { jp: "撮る", read: "とる", kr: "찍다 (사진 등)" },
+  { jp: "とんかつ", read: "とんかつ", kr: "돈가스" },
+  { jp: "どんな", read: "どんな", kr: "어떤" },
+  { jp: "どんぶり", read: "どんぶり", kr: "덮밥" },
+  // な
+  { jp: "中", read: "なか", kr: "안" },
+  { jp: "夏", read: "なつ", kr: "여름" },
+  { jp: "なっとう", read: "なっとう", kr: "낫토" },
+  { jp: "七つ", read: "ななつ", kr: "7개, 일곱" },
+  { jp: "名前", read: "なまえ", kr: "이름" },
+  { jp: "習う", read: "ならう", kr: "배우다" },
+  { jp: "なる", read: "なる", kr: "되다" },
+  { jp: "七", read: "なな", kr: "7, 칠" },
+  // に
+  { jp: "二", read: "に", kr: "2, 이" },
+  { jp: "にぎやかだ", read: "にぎやかだ", kr: "번화하다, 북적이다" },
+  { jp: "日本", read: "にほん", kr: "일본" },
+  { jp: "人気", read: "にんき", kr: "인기" },
+  { jp: "人形", read: "にんぎょう", kr: "인형" },
+  // ね
+  { jp: "猫", read: "ねこ", kr: "고양이" },
+  { jp: "寝る", read: "ねる", kr: "자다" },
+  { jp: "年賀状", read: "ねんがじょう", kr: "연하장" },
+  // の
+  { jp: "のぼる", read: "のぼる", kr: "오르다" },
+  { jp: "飲む", read: "のむ", kr: "마시다" },
+  { jp: "乗る", read: "のる", kr: "타다" },
+  // は
+  { jp: "入る", read: "はいる", kr: "들어가(오)다" },
+  { jp: "はじめて", read: "はじめて", kr: "처음" },
+  { jp: "バスケ", read: "バスケ", kr: "농구" },
+  { jp: "バス停", read: "バスてい", kr: "버스 정류장" },
+  { jp: "パソコン", read: "パソコン", kr: "개인용 컴퓨터" },
+  { jp: "八", read: "はち", kr: "8, 팔" },
+  { jp: "花", read: "はな", kr: "꽃" },
+  { jp: "話す", read: "はなす", kr: "이야기하다" },
+  { jp: "花火", read: "はなび", kr: "불꽃놀이" },
+  { jp: "花見", read: "はなみ", kr: "벚꽃놀이" },
+  { jp: "母", read: "はは", kr: "어머니" },
+  { jp: "早い", read: "はやい", kr: "빠르다" },
+  { jp: "パン", read: "パン", kr: "빵" },
+  { jp: "半", read: "はん", kr: "반" },
+  { jp: "ハッピー", read: "ハッピー", kr: "해피" },
+  // ひ
+  { jp: "ピアノ", read: "ピアノ", kr: "피아노" },
+  { jp: "弾く", read: "ひく", kr: "연주하다 (악기를)" },
+  { jp: "ピザ", read: "ピザ", kr: "피자" },
+  { jp: "左", read: "ひだり", kr: "왼쪽" },
+  { jp: "人", read: "ひと", kr: "사람" },
+  { jp: "一つ", read: "ひとつ", kr: "1개, 하나" },
+  { jp: "一人", read: "ひとり", kr: "한 명" },
+  { jp: "百", read: "ひゃく", kr: "백" },
+  { jp: "美容室", read: "びようしつ", kr: "미용실" },
+  { jp: "病院", read: "びょういん", kr: "병원" },
+  { jp: "昼", read: "ひる", kr: "점심" },
+  // ふ
+  { jp: "部活", read: "ぶかつ", kr: "동아리 활동" },
+  { jp: "服", read: "ふく", kr: "옷" },
+  { jp: "文化", read: "ぶんか", kr: "문화" },
+  { jp: "文化祭", read: "ぶんかさい", kr: "문화제" },
+  // へ
+  { jp: "ベッド", read: "ベッド", kr: "침대" },
+  { jp: "ペット", read: "ペット", kr: "반려동물" },
+  { jp: "勉強", read: "べんきょう", kr: "공부" },
+  { jp: "便利だ", read: "べんりだ", kr: "편리하다" },
+  // ほ
+  { jp: "帽子", read: "ぼうし", kr: "모자" },
+  { jp: "本", read: "ほん", kr: "책" },
+  { jp: "本当", read: "ほんとう", kr: "정말" },
+  { jp: "ほんしゅう", read: "ほんしゅう", kr: "혼슈" },
+  { jp: "ボランティア", read: "ボランティア", kr: "봉사 활동" },
+  // ま
+  { jp: "毎日", read: "まいにち", kr: "매일" },
+  { jp: "前", read: "まえ", kr: "앞" },
+  { jp: "まだ", read: "まだ", kr: "아직(도)" },
+  { jp: "町", read: "まち", kr: "도시, 마을" },
+  { jp: "待つ", read: "まつ", kr: "기다리다" },
+  { jp: "まつり", read: "まつり", kr: "마쓰리, 축제" },
+  { jp: "万", read: "まん", kr: "만" },
+  { jp: "漫画", read: "まんが", kr: "만화" },
+  { jp: "マンション", read: "マンション", kr: "아파트" },
+  // み
+  { jp: "みかん", read: "みかん", kr: "귤" },
+  { jp: "右", read: "みぎ", kr: "오른쪽" },
+  { jp: "店", read: "みせ", kr: "가게" },
+  { jp: "みそ", read: "みそ", kr: "된장" },
+  { jp: "見る", read: "みる", kr: "보다" },
+  { jp: "みんな", read: "みんな", kr: "모두" },
+  // む
+  { jp: "難しい", read: "むずかしい", kr: "어렵다" },
+  { jp: "六つ", read: "むっつ", kr: "6개, 여섯" },
+  // め
+  { jp: "メール", read: "メール", kr: "메일, 전자 우편" },
+  { jp: "メニュー", read: "メニュー", kr: "메뉴" },
+  // も
+  { jp: "もう", read: "もう", kr: "이제, 벌써, 더" },
+  { jp: "物", read: "もの", kr: "물건, 것" },
+  // や
+  { jp: "焼きそば", read: "やきそば", kr: "야키소바" },
+  { jp: "焼肉", read: "やきゅう", kr: "야구" },
+  { jp: "やさしい", read: "やさしい", kr: "쉽다" },
+  { jp: "安い", read: "やすい", kr: "싸다" },
+  { jp: "休む", read: "やすむ", kr: "쉬다" },
+  { jp: "山", read: "やま", kr: "산" },
+  // ゆ
+  { jp: "郵便局", read: "ゆうびんきょく", kr: "우체국" },
+  { jp: "有名だ", read: "ゆうめいだ", kr: "유명하다" },
+  { jp: "ゆかた", read: "ゆかた", kr: "유카타" },
+  { jp: "夢", read: "ゆめ", kr: "꿈" },
+  { jp: "雪まつり", read: "ゆきまつり", kr: "눈 축제" },
+  // よ
+  { jp: "予定", read: "よてい", kr: "예정" },
+  { jp: "読む", read: "よむ", kr: "읽다" },
+  { jp: "よろしい", read: "よろしい", kr: "좋다" },
+  { jp: "横", read: "よこ", kr: "(가로) 옆" },
+  // ら
+  { jp: "ラーメン", read: "ラーメン", kr: "라면" },
+  { jp: "料理", read: "りょうり", kr: "요리" },
+  { jp: "旅行", read: "りょこう", kr: "여행" },
+  { jp: "りんご", read: "りんご", kr: "사과" },
+  { jp: "りんごあめ", read: "りんごあめ", kr: "사과 사탕" },
+  // れ
+  { jp: "零", read: "れい", kr: "0, 영" },
+  // ろ
+  { jp: "六", read: "ろく", kr: "6, 육" },
+  // わ
+  { jp: "わたし", read: "わたし", kr: "나, 저" },
+  { jp: "わっしょい", read: "わっしょい", kr: "와시" },
+];
+const PHRASES = [
+  { situation: "인사", jp: "はじめまして。", read: "하지메마시테", kr: "처음 뵙겠습니다.", note: "처음 만날 때 쓰는 인사" },
+  { situation: "인사", jp: "よろしくお願いします。", read: "요로시쿠 오네가이시마스", kr: "잘 부탁드립니다.", note: "자기소개 마지막에 꼭 붙임" },
+  { situation: "인사", jp: "おはようございます。", read: "오하요우 고자이마스", kr: "안녕하세요. (아침)", note: "오전 인사" },
+  { situation: "인사", jp: "こんにちは。", read: "콘니치와", kr: "안녕하세요. (낮)", note: "낮 인사" },
+  { situation: "인사", jp: "こんばんは。", read: "콘방와", kr: "안녕하세요. (저녁)", note: "저녁 인사" },
+  { situation: "인사", jp: "おやすみなさい。", read: "오야스미나사이", kr: "안녕히 주무세요.", note: "잠들기 전 인사" },
+  { situation: "자기소개", jp: "私は〇〇です。", read: "와타시와 〇〇 데스", kr: "저는 〇〇입니다.", note: "이름/국적 소개에 활용" },
+  { situation: "자기소개", jp: "韓国から来ました。", read: "칸코쿠카라 키마시타", kr: "한국에서 왔습니다.", note: "출신지 소개" },
+  { situation: "자기소개", jp: "高校生です。", read: "코우코우세이 데스", kr: "고등학생입니다.", note: "학년/신분 소개" },
+  { situation: "자기소개", jp: "趣味は〇〇です。", read: "슈미와 〇〇 데스", kr: "취미는 〇〇입니다.", note: "취미 소개" },
+  { situation: "감사/사과", jp: "ありがとうございます。", read: "아리가토우 고자이마스", kr: "감사합니다.", note: "정중한 감사 표현" },
+  { situation: "감사/사과", jp: "すみません。", read: "스미마셍", kr: "실례합니다 / 저기요.", note: "사과+주의끌기 모두 사용" },
+  { situation: "감사/사과", jp: "ごめんなさい。", read: "고멘나사이", kr: "미안합니다.", note: "사과 표현" },
+  { situation: "일상", jp: "お元気ですか。", read: "오겡키 데스카", kr: "잘 지내세요?", note: "안부 묻기" },
+  { situation: "일상", jp: "いただきます。", read: "이타다키마스", kr: "잘 먹겠습니다.", note: "식사 전 인사" },
+  { situation: "일상", jp: "ごちそうさまでした。", read: "고치소우사마데시타", kr: "잘 먹었습니다.", note: "식사 후 인사" },
+  { situation: "일상", jp: "行ってきます。", read: "잇테키마스", kr: "다녀오겠습니다.", note: "외출할 때" },
+  { situation: "일상", jp: "ただいま。", read: "타다이마", kr: "다녀왔습니다.", note: "귀가할 때" },
+];
+
+function seededShuffle(arr) {
+  const today = new Date();
+  const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+  const a = [...arr]; let s = seed;
+  for (let i = a.length - 1; i > 0; i--) {
+    s = (s * 1664525 + 1013904223) & 0xffffffff;
+    const j = Math.abs(s) % (i + 1);
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
+
+// 열 헤더: あ단~お단
+const COL_HEADERS = ["あ단", "い단", "う단", "え단", "お단"];
+// 행 헤더 (12행 순서대로)
+const ROW_HEADERS_H = ["あ행","か행","さ행","た행","な행","は행","ま행","や행","ら행","わ행","ん",""];
+const ROW_HEADERS_K = ["ア행","カ행","サ행","タ행","ナ행","ハ행","マ행","ヤ행","ラ행","ワ행","ン",""];
+
+// ===== KANA GRID (문자·로마자 동시 가리기 토글 + 행/열 헤더) =====
+function KanaGrid({ data, title, settings, isKatakana }) {
+  const [flipped, setFlipped] = useState(new Set());
+  const [hiding, setHiding] = useState(false); // false = 모두 보기, true = 가리기
+  const accent = settings.accent;
+  const rowHeaders = isKatakana ? ROW_HEADERS_K : ROW_HEADERS_H;
+
+  function toggleFlip(i) {
+    if (!hiding) return;
+    setFlipped(prev => {
+      const n = new Set(prev);
+      n.has(i) ? n.delete(i) : n.add(i);
+      return n;
+    });
+  }
+
+  // 12행 × 5열 구조
+  const rows = [];
+  for (let r = 0; r < 12; r++) rows.push(data.slice(r * 5, r * 5 + 5));
+
+  return (
+    <div style={{ padding: "14px 10px" }}>
+      <h2 style={{ fontFamily: "'Noto Serif JP', serif", fontSize: 18, color: "#1a1a2e", marginBottom: 10, textAlign: "center" }}>{title}</h2>
+
+      {/* 가리기 토글 — 버튼 하나 */}
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 10, gap: 8, alignItems: "center" }}>
+        <button
+          onClick={() => { setHiding(h => !h); setFlipped(new Set()); }}
+          style={{
+            padding: "6px 18px", borderRadius: 20, border: "none", fontSize: 11, fontWeight: "bold",
+            cursor: "pointer", transition: "all 0.15s",
+            background: hiding ? accent : "#f0eef8",
+            color: hiding ? "white" : "#555",
+          }}
+        >
+          {hiding ? "🙈 가리는 중" : "👁 가리기"}
+        </button>
+        {hiding && flipped.size > 0 && (
+          <button onClick={() => setFlipped(new Set())} style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${accent}55`, background: "transparent", color: accent, fontSize: 11, cursor: "pointer" }}>
+            전부 가리기
+          </button>
+        )}
+      </div>
+      {hiding && (
+        <p style={{ fontSize: 10, color: "#bbb", textAlign: "center", marginBottom: 8 }}>
+          카드를 터치하면 문자·로마자가 함께 공개됩니다
+        </p>
+      )}
+
+      {/* 표 전체 래퍼 — 가로 스크롤 */}
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ borderCollapse: "separate", borderSpacing: 4, width: "100%" }}>
+          {/* 열 헤더 */}
+          <thead>
+            <tr>
+              <th style={{ width: 32 }} /> {/* 행 헤더 공간 */}
+              {COL_HEADERS.map(h => (
+                <th key={h} style={{
+                  fontSize: 9, color: "#aaa", fontWeight: "bold", textAlign: "center",
+                  padding: "0 0 4px", letterSpacing: 0.5, fontFamily: "'Noto Sans KR', sans-serif"
+                }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, r) => {
+              // ん행(r=10)은 첫 셀만, r=11은 빈 행(없음) → skip
+              if (r === 11) return null;
+              return (
+                <tr key={r}>
+                  {/* 행 헤더 */}
+                  <td style={{
+                    fontSize: 9, color: "#aaa", fontWeight: "bold", textAlign: "right",
+                    paddingRight: 5, whiteSpace: "nowrap", verticalAlign: "middle",
+                    fontFamily: "'Noto Sans KR', sans-serif"
+                  }}>
+                    {rowHeaders[r]}
+                  </td>
+                  {row.map((item, c) => {
+                    const globalIdx = r * 5 + c;
+                    const isEmpty = item.rom === "";
+                    if (isEmpty) return <td key={c} />;
+
+                    const isFlipped = flipped.has(globalIdx);
+                    const isHidden = hiding && !isFlipped;
+
+                    return (
+                      <td key={c} style={{ padding: 0 }}>
+                        <button
+                          onClick={() => toggleFlip(globalIdx)}
+                          style={{
+                            width: "100%", minWidth: 52,
+                            background: isFlipped ? accent : isHidden ? "#1e1e30" : "white",
+                            border: `2px solid ${isFlipped ? accent : isHidden ? "#2e2e48" : "#e8e0f0"}`,
+                            borderRadius: 9, padding: "8px 3px",
+                            cursor: hiding ? "pointer" : "default",
+                            transition: "all 0.18s",
+                            transform: isFlipped ? "scale(1.06)" : "scale(1)",
+                            boxShadow: isFlipped ? `0 3px 12px ${accent}44` : "0 1px 3px rgba(0,0,0,0.05)",
+                          }}
+                        >
+                          <div style={{
+                            fontSize: 19, fontFamily: "'Noto Serif JP', serif", lineHeight: 1,
+                            color: isFlipped ? "white" : isHidden ? "#1e1e30" : "#1a1a2e",
+                            transition: "color 0.18s",
+                          }}>
+                            {isHidden ? "？" : item.char}
+                          </div>
+                          <div style={{
+                            fontSize: 8, marginTop: 2,
+                            color: isFlipped ? "rgba(255,255,255,0.8)" : isHidden ? "#1e1e30" : "#999",
+                            transition: "color 0.18s",
+                          }}>
+                            {isHidden ? "···" : item.rom}
+                          </div>
+                        </button>
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ===== KANA QUIZ =====
+function KanaQuiz({ settings }) {
+  const accent = settings.accent;
+  const [mode, setMode] = useState("select");
+  const [type, setType] = useState("hiragana");
+  const [quizMode, setQuizMode] = useState("char2rom");
+  const [questions, setQuestions] = useState([]);
+  const [current, setCurrent] = useState(0);
+  const [score, setScore] = useState(0);
+  const [chosen, setChosen] = useState(null);
+  const [wrong, setWrong] = useState([]);
+
+  const getPool = () => type === "hiragana" ? HIRAGANA.filter(k => k.rom !== "") : type === "katakana" ? KATAKANA.filter(k => k.rom !== "") : [...HIRAGANA, ...KATAKANA].filter(k => k.rom !== "");
+
+  function startQuiz() {
+    const pool = getPool();
+    const qs = shuffle(pool).slice(0, 16).map(item => {
+      const others = pool.filter(k => k.char !== item.char && k.rom !== item.rom);
+      return { item, options: shuffle([item, ...shuffle(others).slice(0, 7)]) };
+    });
+    setQuestions(qs); setCurrent(0); setScore(0); setChosen(null); setWrong([]); setMode("quiz");
+  }
+
+  function handleAnswer(opt) {
+    if (chosen) return;
+    setChosen(opt);
+    const correct = questions[current].item;
+    if (quizMode === "char2rom" ? opt.rom === correct.rom : opt.char === correct.char) setScore(s => s + 1);
+    else setWrong(w => [...w, correct]);
+    setTimeout(() => {
+      if (current + 1 >= questions.length) setMode("result");
+      else { setCurrent(c => c + 1); setChosen(null); }
+    }, 750);
+  }
+
+  if (mode === "select") return (
+    <div style={{ padding: 20 }}>
+      <h2 style={{ fontFamily: "'Noto Serif JP', serif", fontSize: 20, color: "#1a1a2e", marginBottom: 4, textAlign: "center" }}>문자 퀴즈</h2>
+      <p style={{ fontSize: 11, color: accent, textAlign: "center", marginBottom: 18, fontWeight: "bold" }}>8지선다</p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ background: "white", borderRadius: 12, padding: 14, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+          <p style={{ fontSize: 12, color: "#777", marginBottom: 8 }}>문자 종류</p>
+          <div style={{ display: "flex", gap: 6 }}>
+            {[["hiragana","히라가나"],["katakana","가타카나"],["both","둘 다"]].map(([v,l]) => (
+              <button key={v} onClick={() => setType(v)} style={{ flex:1, padding:"7px 0", borderRadius:8, border:"none", background: type===v ? accent : "#f0eef8", color: type===v ? "white" : "#555", fontWeight:"bold", fontSize:11, cursor:"pointer" }}>{l}</button>
+            ))}
+          </div>
+        </div>
+        <div style={{ background: "white", borderRadius: 12, padding: 14, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+          <p style={{ fontSize: 12, color: "#777", marginBottom: 8 }}>방향</p>
+          <div style={{ display: "flex", gap: 6 }}>
+            {[["char2rom","글자 → 로마자"],["rom2char","로마자 → 글자"]].map(([v,l]) => (
+              <button key={v} onClick={() => setQuizMode(v)} style={{ flex:1, padding:"7px 0", borderRadius:8, border:"none", background: quizMode===v ? accent : "#f0eef8", color: quizMode===v ? "white" : "#555", fontWeight:"bold", fontSize:11, cursor:"pointer" }}>{l}</button>
+            ))}
+          </div>
+        </div>
+        <button onClick={startQuiz} style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)`, color:"white", border:"none", borderRadius:12, padding:"13px 0", fontSize:15, fontWeight:"bold", cursor:"pointer" }}>퀴즈 시작 🎯</button>
+      </div>
+    </div>
+  );
+
+  if (mode === "result") return (
+    <div style={{ padding: 20, textAlign: "center" }}>
+      <div style={{ fontSize: 48, marginBottom: 8 }}>{score >= 14 ? "🎉" : score >= 10 ? "😊" : "💪"}</div>
+      <h2 style={{ fontFamily: "'Noto Serif JP', serif", fontSize: 22, color: "#1a1a2e" }}>{score} / {questions.length}</h2>
+      <p style={{ color: "#777", marginBottom: 18 }}>{score >= 14 ? "완벽해!" : score >= 10 ? "잘했어!" : "조금 더 연습해보자"}</p>
+      {wrong.length > 0 && (
+        <div style={{ background:"white", borderRadius:12, padding:14, marginBottom:14, textAlign:"left", boxShadow:"0 2px 8px rgba(0,0,0,0.05)" }}>
+          <p style={{ fontSize:12, fontWeight:"bold", color:accent, marginBottom:8 }}>틀린 문자</p>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+            {wrong.map((w,i) => <span key={i} style={{ background:"#fff0f0", borderRadius:8, padding:"5px 10px", fontSize:17, fontFamily:"'Noto Serif JP', serif" }}>{w.char} <span style={{ fontSize:11, color:"#888" }}>{w.rom}</span></span>)}
+          </div>
+        </div>
+      )}
+      <button onClick={() => setMode("select")} style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)`, color:"white", border:"none", borderRadius:12, padding:"11px 28px", fontSize:14, fontWeight:"bold", cursor:"pointer" }}>다시 하기</button>
+    </div>
+  );
+
+  const q = questions[current];
+  const isCorrect = opt => quizMode === "char2rom" ? opt.rom === q.item.rom : opt.char === q.item.char;
+  return (
+    <div style={{ padding: 20 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
+        <span style={{ fontSize:12, color:"#888" }}>{current+1} / {questions.length}</span>
+        <span style={{ fontSize:12, color:accent, fontWeight:"bold" }}>점수 {score}</span>
+      </div>
+      <div style={{ background:"#e8e0f0", width:"100%", height:3, borderRadius:2, marginBottom:14 }}>
+        <div style={{ background:accent, width:`${(current/questions.length)*100}%`, height:"100%", borderRadius:2, transition:"width 0.3s" }} />
+      </div>
+      <div style={{ background:"linear-gradient(135deg,#1a1a2e,#16213e)", borderRadius:18, padding:"22px 18px", textAlign:"center", marginBottom:12, boxShadow:"0 6px 24px rgba(0,0,0,0.15)" }}>
+        <div style={{ fontSize: quizMode==="char2rom" ? 64 : 20, fontFamily:"'Noto Serif JP', serif", color:"white", lineHeight:1 }}>{quizMode==="char2rom" ? q.item.char : q.item.rom.toUpperCase()}</div>
+        <div style={{ fontSize:10, color:"#555", marginTop:5 }}>{quizMode==="char2rom" ? "로마자를 고르세요" : "문자를 고르세요"}</div>
+      </div>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
+        {q.options.map((opt,i) => {
+          let bg="white", border="2px solid #e8e0f0";
+          if (chosen) { if (isCorrect(opt)) { bg="#d4f7d4"; border="2px solid #4caf50"; } else if (opt.char===chosen.char && !isCorrect(opt)) { bg="#ffd4d4"; border="2px solid #e63946"; } }
+          return (
+            <button key={i} onClick={() => handleAnswer(opt)} style={{ background:bg, border, borderRadius:10, padding:"10px 5px", cursor: chosen?"default":"pointer", transition:"all 0.18s" }}>
+              <div style={{ fontSize: quizMode==="char2rom" ? 12 : 22, fontFamily:"'Noto Serif JP', serif", color:"#1a1a2e", fontWeight:"bold" }}>{quizMode==="char2rom" ? opt.rom : opt.char}</div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ===== FLASHCARD =====
+function Flashcard({ settings }) {
+  const accent = settings.accent;
+  const dailyCards = useMemo(() => seededShuffle(VOCAB), []);
+  const [idx, setIdx] = useState(0);
+  const [flipped, setFlipped] = useState(false);
+  const [known, setKnown] = useState(new Set());
+  const [unknown, setUnknown] = useState(new Set());
+  const [done, setDone] = useState(false);
+  const total = dailyCards.length;
+  const card = dailyCards[idx];
+  const today = new Date();
+  const dateStr = `${today.getMonth()+1}월 ${today.getDate()}일`;
+
+  function goNext() { if (idx < total-1) { setIdx(i=>i+1); setFlipped(false); } else setDone(true); }
+  function goPrev() { if (idx > 0) { setIdx(i=>i-1); setFlipped(false); } }
+  function markKnown() { setKnown(s=>new Set([...s,idx])); setUnknown(s=>{const n=new Set(s);n.delete(idx);return n;}); goNext(); }
+  function markUnknown() { setUnknown(s=>new Set([...s,idx])); setKnown(s=>{const n=new Set(s);n.delete(idx);return n;}); goNext(); }
+
+  if (done) return (
+    <div style={{ padding:20, textAlign:"center" }}>
+      <div style={{ fontSize:48, marginBottom:10 }}>✅</div>
+      <h2 style={{ fontFamily:"'Noto Serif JP', serif", color:"#1a1a2e", marginBottom:4 }}>오늘 학습 완료!</h2>
+      <p style={{ color:"#888", fontSize:12, marginBottom:18 }}>{dateStr}</p>
+      <div style={{ display:"flex", justifyContent:"center", gap:14, marginBottom:18 }}>
+        <div style={{ background:"#d4f7d4", borderRadius:12, padding:"12px 20px" }}><div style={{ fontSize:26, fontWeight:"bold", color:"#2e7d32" }}>{known.size}</div><div style={{ fontSize:11, color:"#555" }}>알아 ✓</div></div>
+        <div style={{ background:"#ffd4d4", borderRadius:12, padding:"12px 20px" }}><div style={{ fontSize:26, fontWeight:"bold", color:"#c62828" }}>{unknown.size}</div><div style={{ fontSize:11, color:"#555" }}>모름 ✗</div></div>
+      </div>
+      {unknown.size > 0 && (
+        <div style={{ background:"white", borderRadius:12, padding:14, marginBottom:14, textAlign:"left", boxShadow:"0 2px 8px rgba(0,0,0,0.05)" }}>
+          <p style={{ fontSize:12, fontWeight:"bold", color:accent, marginBottom:8 }}>복습 필요 단어</p>
+          {[...unknown].map(i => (
+            <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"5px 0", borderBottom:"1px solid #f5f5f5" }}>
+              <span style={{ fontFamily:"'Noto Serif JP', serif", fontSize:15 }}>{dailyCards[i].jp}</span>
+              <span style={{ fontSize:11, color:"#aaa" }}>{dailyCards[i].read}</span>
+              <span style={{ fontSize:12, color:accent, fontWeight:"bold" }}>{dailyCards[i].kr}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      <button onClick={() => { setIdx(0);setFlipped(false);setDone(false);setKnown(new Set());setUnknown(new Set()); }} style={{ background:`linear-gradient(135deg,${accent},${accent}cc)`, color:"white", border:"none", borderRadius:12, padding:"11px 28px", fontSize:14, fontWeight:"bold", cursor:"pointer" }}>다시 시작</button>
+    </div>
+  );
+
+  return (
+    <div style={{ padding:20 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+        <span style={{ fontSize:11, color:"#888" }}>📅 {dateStr}</span>
+        <div style={{ display:"flex", gap:5 }}>
+          <span style={{ fontSize:11, background:"#d4f7d4", borderRadius:20, padding:"2px 9px", color:"#2e7d32" }}>✓ {known.size}</span>
+          <span style={{ fontSize:11, background:"#ffd4d4", borderRadius:20, padding:"2px 9px", color:"#c62828" }}>✗ {unknown.size}</span>
+        </div>
+      </div>
+      <div style={{ background:"#e8e0f0", width:"100%", height:3, borderRadius:2, marginBottom:14 }}>
+        <div style={{ background:accent, width:`${(idx/total)*100}%`, height:"100%", borderRadius:2, transition:"width 0.3s" }} />
+      </div>
+      <div onClick={() => setFlipped(f=>!f)} style={{
+        background: flipped ? "linear-gradient(135deg,#1a1a2e,#16213e)" : "white",
+        borderRadius:18, padding:"34px 22px", textAlign:"center", minHeight:165, cursor:"pointer",
+        boxShadow: flipped ? "0 8px 28px rgba(0,0,0,0.2)" : "0 4px 14px rgba(0,0,0,0.07)",
+        transition:"all 0.3s", marginBottom:12,
+        display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"center",
+        border: known.has(idx) ? "2px solid #4caf50" : unknown.has(idx) ? `2px solid ${accent}` : "2px solid transparent",
+      }}>
+        {!flipped ? (
+          <>{settings.showReading && <div style={{ fontSize:11, color:"#ddd", marginBottom:4 }}>{card.read}</div>}
+          <div style={{ fontSize:42, fontFamily:"'Noto Serif JP', serif", color:"#1a1a2e" }}>{card.jp}</div>
+          {!settings.showReading && <div style={{ fontSize:13, color:"#bbb", marginTop:4 }}>{card.read}</div>}
+          <div style={{ fontSize:10, color:"#ccc", marginTop:10 }}>터치해서 뜻 보기</div></>
+        ) : (
+          <><div style={{ fontSize:30, fontFamily:"'Noto Serif JP', serif", color:"white" }}>{card.jp}</div>
+          <div style={{ fontSize:12, color:"#666", marginTop:3 }}>{card.read}</div>
+          <div style={{ fontSize:24, color:accent, fontWeight:"bold", marginTop:10 }}>{card.kr}</div></>
+        )}
+      </div>
+      <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+        <button onClick={goPrev} disabled={idx===0} style={{ width:42, height:42, borderRadius:11, border:"2px solid #e8e0f0", background:"white", fontSize:17, cursor:idx===0?"not-allowed":"pointer", color:idx===0?"#ddd":"#555", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>←</button>
+        {flipped ? (
+          <><button onClick={markUnknown} style={{ flex:1, padding:"10px 0", borderRadius:11, border:"none", background:"#ffd4d4", color:"#c62828", fontWeight:"bold", fontSize:13, cursor:"pointer" }}>모르겠어 ✗</button>
+          <button onClick={markKnown} style={{ flex:1, padding:"10px 0", borderRadius:11, border:"none", background:"#d4f7d4", color:"#2e7d32", fontWeight:"bold", fontSize:13, cursor:"pointer" }}>알아! ✓</button></>
+        ) : (
+          <button onClick={goNext} style={{ flex:1, padding:"10px 0", borderRadius:11, border:"2px solid #e8e0f0", background:"white", color:"#999", fontSize:12, cursor:"pointer" }}>그냥 넘기기</button>
+        )}
+        <button onClick={goNext} style={{ width:42, height:42, borderRadius:11, border:"2px solid #e8e0f0", background:"white", fontSize:17, cursor:"pointer", color:"#555", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>→</button>
+      </div>
+      <div style={{ textAlign:"center", fontSize:11, color:"#ccc", marginTop:8 }}>{idx+1} / {total}</div>
+    </div>
+  );
+}
+
+// ===== VOCAB QUIZ + STATS =====
+function VocabQuiz({ settings, quizStats, setQuizStats }) {
+  const accent = settings.accent;
+  const [mode, setMode] = useState("select"); // select | quiz | result | stats
+  const [quizDir, setQuizDir] = useState("jp2kr");
+  const [questions, setQuestions] = useState([]);
+  const [current, setCurrent] = useState(0);
+  const [score, setScore] = useState(0);
+  const [chosen, setChosen] = useState(null);
+  const [wrong, setWrong] = useState([]);
+
+  function start() {
+    const qs = shuffle(VOCAB).slice(0, 15).map(item => {
+      const others = VOCAB.filter(v => v.jp !== item.jp);
+      return { item, options: shuffle([item, ...shuffle(others).slice(0,3)]) };
+    });
+    setQuestions(qs); setCurrent(0); setScore(0); setChosen(null); setWrong([]); setMode("quiz");
+  }
+
+  function handleAnswer(opt) {
+    if (chosen) return;
+    setChosen(opt);
+    const isRight = opt.jp === questions[current].item.jp;
+    if (isRight) setScore(s=>s+1);
+    else setWrong(w=>[...w,questions[current].item]);
+    setTimeout(() => {
+      if (current+1 >= questions.length) setMode("result");
+      else { setCurrent(c=>c+1); setChosen(null); }
+    }, 750);
+  }
+
+  function finishAndSave(finalScore) {
+    const pct = Math.round((finalScore / 15) * 100);
+    const now = new Date();
+    const entry = {
+      date: `${now.getMonth()+1}/${now.getDate()}`,
+      score: finalScore,
+      total: 15,
+      pct,
+      dir: quizDir === "jp2kr" ? "일→한" : "한→일",
+    };
+    setQuizStats(prev => [entry, ...prev].slice(0, 20));
+    setMode("result");
+  }
+
+  // override handleAnswer to also save
+  function handleAnswerFinal(opt) {
+    if (chosen) return;
+    setChosen(opt);
+    const isRight = opt.jp === questions[current].item.jp;
+    const newScore = isRight ? score + 1 : score;
+    if (isRight) setScore(s=>s+1);
+    else setWrong(w=>[...w,questions[current].item]);
+    setTimeout(() => {
+      if (current+1 >= questions.length) {
+        const pct = Math.round((newScore / 15) * 100);
+        const now = new Date();
+        const entry = { date:`${now.getMonth()+1}/${now.getDate()}`, score:newScore, total:15, pct, dir: quizDir==="jp2kr" ? "일→한" : "한→일" };
+        setQuizStats(prev => [entry, ...prev].slice(0, 20));
+        setMode("result");
+      } else { setCurrent(c=>c+1); setChosen(null); }
+    }, 750);
+  }
+
+  // STATS VIEW
+  if (mode === "stats") {
+    const avgPct = quizStats.length > 0 ? Math.round(quizStats.reduce((a,b)=>a+b.pct,0)/quizStats.length) : 0;
+    const best = quizStats.length > 0 ? Math.max(...quizStats.map(s=>s.pct)) : 0;
+    return (
+      <div style={{ padding:20 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
+          <button onClick={() => setMode("select")} style={{ background:"none", border:"none", fontSize:20, cursor:"pointer", color:"#888" }}>←</button>
+          <h2 style={{ fontFamily:"'Noto Serif JP', serif", fontSize:19, color:"#1a1a2e" }}>테스트 통계</h2>
+        </div>
+        {quizStats.length === 0 ? (
+          <div style={{ textAlign:"center", padding:"40px 0", color:"#bbb" }}>
+            <div style={{ fontSize:40, marginBottom:10 }}>📊</div>
+            <p style={{ fontSize:13 }}>아직 테스트 기록이 없어요</p>
+          </div>
+        ) : (
+          <>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom:16 }}>
+              {[["총 횟수", `${quizStats.length}회`, "📝"],["평균 점수", `${avgPct}%`, "📈"],["최고 점수", `${best}%`, "🏆"]].map(([l,v,e]) => (
+                <div key={l} style={{ background:"white", borderRadius:12, padding:"12px 8px", textAlign:"center", boxShadow:"0 2px 8px rgba(0,0,0,0.05)" }}>
+                  <div style={{ fontSize:20, marginBottom:4 }}>{e}</div>
+                  <div style={{ fontSize:17, fontWeight:"bold", color:"#1a1a2e" }}>{v}</div>
+                  <div style={{ fontSize:10, color:"#aaa" }}>{l}</div>
+                </div>
+              ))}
+            </div>
+            {/* 바 차트 */}
+            <div style={{ background:"white", borderRadius:12, padding:14, marginBottom:14, boxShadow:"0 2px 8px rgba(0,0,0,0.05)" }}>
+              <p style={{ fontSize:12, color:"#888", marginBottom:10 }}>최근 기록 (최신순)</p>
+              <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                {quizStats.slice(0,8).map((s,i) => (
+                  <div key={i} style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    <span style={{ fontSize:10, color:"#aaa", width:30, flexShrink:0 }}>{s.date}</span>
+                    <div style={{ flex:1, background:"#f0eef8", borderRadius:4, height:18, overflow:"hidden" }}>
+                      <div style={{ width:`${s.pct}%`, height:"100%", background: s.pct>=80 ? "#4caf50" : s.pct>=60 ? accent : "#e63946", borderRadius:4, transition:"width 0.4s", display:"flex", alignItems:"center", paddingLeft:4 }}>
+                        <span style={{ fontSize:9, color:"white", fontWeight:"bold" }}>{s.score}/{s.total}</span>
+                      </div>
+                    </div>
+                    <span style={{ fontSize:10, color:"#888", width:24, flexShrink:0 }}>{s.dir}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <button onClick={() => setQuizStats([])} style={{ width:"100%", padding:"9px 0", borderRadius:10, border:"1px solid #fdd", background:"#fff5f5", color:"#e63946", fontSize:12, cursor:"pointer" }}>기록 초기화</button>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  if (mode === "select") return (
+    <div style={{ padding:20 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+        <h2 style={{ fontFamily:"'Noto Serif JP', serif", fontSize:19, color:"#1a1a2e" }}>단어 테스트</h2>
+        <button onClick={() => setMode("stats")} style={{ background:"white", border:`1.5px solid ${accent}44`, borderRadius:10, padding:"5px 12px", fontSize:11, color:accent, fontWeight:"bold", cursor:"pointer" }}>📊 통계</button>
+      </div>
+      <p style={{ fontSize:11, color:"#aaa", marginBottom:14 }}>단어암기와 동일한 {VOCAB.length}개 단어 출제</p>
+      {quizStats.length > 0 && (
+        <div style={{ background:"white", borderRadius:12, padding:12, marginBottom:12, boxShadow:"0 2px 8px rgba(0,0,0,0.05)", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          <span style={{ fontSize:12, color:"#888" }}>최근 점수</span>
+          <span style={{ fontSize:14, fontWeight:"bold", color: quizStats[0].pct>=80?"#4caf50":quizStats[0].pct>=60?accent:"#e63946" }}>{quizStats[0].score}/{quizStats[0].total} ({quizStats[0].pct}%)</span>
+        </div>
+      )}
+      <div style={{ background:"white", borderRadius:12, padding:14, marginBottom:12, boxShadow:"0 2px 8px rgba(0,0,0,0.05)" }}>
+        <p style={{ fontSize:12, color:"#777", marginBottom:8 }}>출제 방향</p>
+        <div style={{ display:"flex", gap:6 }}>
+          {[["jp2kr","일본어 → 한국어"],["kr2jp","한국어 → 일본어"]].map(([v,l]) => (
+            <button key={v} onClick={() => setQuizDir(v)} style={{ flex:1, padding:"7px 0", borderRadius:8, border:"none", background:quizDir===v?accent:"#f0eef8", color:quizDir===v?"white":"#555", fontWeight:"bold", fontSize:11, cursor:"pointer" }}>{l}</button>
+          ))}
+        </div>
+      </div>
+      <button onClick={start} style={{ width:"100%", background:`linear-gradient(135deg,${accent},${accent}cc)`, color:"white", border:"none", borderRadius:12, padding:"13px 0", fontSize:15, fontWeight:"bold", cursor:"pointer" }}>테스트 시작 📝</button>
+    </div>
+  );
+
+  if (mode === "result") return (
+    <div style={{ padding:20, textAlign:"center" }}>
+      <div style={{ fontSize:48, marginBottom:8 }}>{score>=13?"🏆":score>=10?"👍":"📚"}</div>
+      <h2 style={{ fontFamily:"'Noto Serif JP', serif", fontSize:22, color:"#1a1a2e" }}>{score} / {questions.length}</h2>
+      <div style={{ fontSize:13, color:"#888", marginBottom:4 }}>{Math.round((score/questions.length)*100)}%</div>
+      <p style={{ color:"#777", marginBottom:18 }}>{score>=13?"훌륭해!":score>=10?"잘했어!":"더 연습해보자!"}</p>
+      {wrong.length>0 && (
+        <div style={{ background:"white", borderRadius:12, padding:14, marginBottom:14, textAlign:"left", boxShadow:"0 2px 8px rgba(0,0,0,0.05)" }}>
+          <p style={{ fontSize:12, fontWeight:"bold", color:accent, marginBottom:8 }}>복습 단어</p>
+          {wrong.map((w,i) => (
+            <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"5px 0", borderBottom:"1px solid #f5f5f5" }}>
+              <span style={{ fontFamily:"'Noto Serif JP', serif", fontSize:15 }}>{w.jp}</span>
+              <span style={{ fontSize:11, color:"#aaa" }}>{w.read}</span>
+              <span style={{ fontSize:12, color:accent, fontWeight:"bold" }}>{w.kr}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      <div style={{ display:"flex", gap:8 }}>
+        <button onClick={() => setMode("select")} style={{ flex:1, background:"#f0eef8", color:"#555", border:"none", borderRadius:12, padding:"11px 0", fontSize:13, fontWeight:"bold", cursor:"pointer" }}>처음으로</button>
+        <button onClick={start} style={{ flex:1, background:`linear-gradient(135deg,${accent},${accent}cc)`, color:"white", border:"none", borderRadius:12, padding:"11px 0", fontSize:13, fontWeight:"bold", cursor:"pointer" }}>다시 하기</button>
+      </div>
+    </div>
+  );
+
+  const q = questions[current];
+  return (
+    <div style={{ padding:20 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
+        <span style={{ fontSize:12, color:"#888" }}>{current+1} / {questions.length}</span>
+        <span style={{ fontSize:12, color:accent, fontWeight:"bold" }}>점수 {score}</span>
+      </div>
+      <div style={{ background:"#e8e0f0", width:"100%", height:3, borderRadius:2, marginBottom:18 }}>
+        <div style={{ background:accent, width:`${(current/questions.length)*100}%`, height:"100%", borderRadius:2, transition:"width 0.3s" }} />
+      </div>
+      <div style={{ background:"linear-gradient(135deg,#1a1a2e,#16213e)", borderRadius:18, padding:"34px 18px", textAlign:"center", marginBottom:18 }}>
+        {quizDir==="jp2kr" ? (<><div style={{ fontSize:42, fontFamily:"'Noto Serif JP', serif", color:"white" }}>{q.item.jp}</div><div style={{ fontSize:13, color:"#777", marginTop:5 }}>{q.item.read}</div></>) : (<div style={{ fontSize:26, color:"white", fontWeight:"bold" }}>{q.item.kr}</div>)}
+      </div>
+      <div style={{ display:"flex", flexDirection:"column", gap:9 }}>
+        {q.options.map((opt,i) => {
+          let bg="white", border="2px solid #e8e0f0";
+          if (chosen) { if (opt.jp===q.item.jp){bg="#d4f7d4";border="2px solid #4caf50";} else if (opt.jp===chosen.jp){bg="#ffd4d4";border="2px solid #e63946";} }
+          return (
+            <button key={i} onClick={() => handleAnswerFinal(opt)} style={{ background:bg, border, borderRadius:11, padding:"13px 14px", cursor:chosen?"default":"pointer", transition:"all 0.18s", textAlign:"left" }}>
+              <span style={{ fontFamily:"'Noto Serif JP', serif", fontSize:quizDir==="jp2kr"?14:19, color:"#1a1a2e" }}>{quizDir==="jp2kr"?opt.kr:opt.jp}</span>
+              {quizDir==="kr2jp" && <span style={{ fontSize:11, color:"#bbb", marginLeft:7 }}>{opt.read}</span>}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ===== PHRASES =====
+function PhrasesTab({ settings }) {
+  const accent = settings.accent;
+  const situations = [...new Set(PHRASES.map(p=>p.situation))];
+  const [active, setActive] = useState(situations[0]);
+  const [expanded, setExpanded] = useState(null);
+  const filtered = PHRASES.filter(p=>p.situation===active);
+  return (
+    <div style={{ padding:16 }}>
+      <h2 style={{ fontFamily:"'Noto Serif JP', serif", fontSize:19, color:"#1a1a2e", marginBottom:14, textAlign:"center" }}>일상 표현</h2>
+      <div style={{ display:"flex", gap:6, overflowX:"auto", marginBottom:14, paddingBottom:3 }}>
+        {situations.map(s => <button key={s} onClick={() => {setActive(s);setExpanded(null);}} style={{ padding:"5px 13px", borderRadius:20, border:"none", whiteSpace:"nowrap", background:active===s?accent:"#f0eef8", color:active===s?"white":"#555", fontWeight:"bold", fontSize:11, cursor:"pointer" }}>{s}</button>)}
+      </div>
+      <div style={{ display:"flex", flexDirection:"column", gap:9 }}>
+        {filtered.map((p,i) => (
+          <div key={i} onClick={() => setExpanded(expanded===i?null:i)} style={{ background:"white", borderRadius:13, padding:"13px 15px", boxShadow:"0 2px 8px rgba(0,0,0,0.05)", cursor:"pointer", border:expanded===i?`2px solid ${accent}`:"2px solid transparent", transition:"all 0.18s" }}>
+            <div style={{ fontFamily:"'Noto Serif JP', serif", fontSize:19, color:"#1a1a2e" }}>{p.jp}</div>
+            <div style={{ fontSize:11, color:"#bbb", marginTop:2 }}>{p.read}</div>
+            {expanded===i && (<div style={{ marginTop:9, paddingTop:9, borderTop:"1px solid #f0eef8" }}>
+              <div style={{ fontSize:15, color:accent, fontWeight:"bold" }}>{p.kr}</div>
+              <div style={{ fontSize:11, color:"#888", marginTop:5, background:"#fafafa", borderRadius:7, padding:"5px 9px" }}>💡 {p.note}</div>
+            </div>)}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ===== SETTINGS =====
+const ACCENT_COLORS = [
+  { name: "레드", value: "#e63946" },
+  { name: "인디고", value: "#4361ee" },
+  { name: "그린", value: "#2d9a60" },
+  { name: "오렌지", value: "#f77f00" },
+  { name: "퍼플", value: "#7b2d8b" },
+  { name: "틸", value: "#0096c7" },
+];
+function SettingsTab({ settings, setSettings, quizStats, setQuizStats }) {
+  function toggle(key) { setSettings(s => ({...s, [key]: !s[key]})); }
+
+  return (
+    <div>
+
+      {/* 테마 색상 */}
+      <div style={{ background:"white", borderRadius:14, padding:16, marginBottom:12, boxShadow:"0 2px 8px rgba(0,0,0,0.05)" }}>
+        <p style={{ fontSize:13, fontWeight:"bold", color:"#333", marginBottom:12 }}>테마 색상</p>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8 }}>
+          {ACCENT_COLORS.map(c => (
+            <button key={c.value} onClick={() => setSettings(s=>({...s,accent:c.value}))} style={{
+              padding:"10px 0", borderRadius:10, border:`2px solid ${settings.accent===c.value?c.value:"#e8e0f0"}`,
+              background: settings.accent===c.value ? c.value+"18" : "white",
+              cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:4
+            }}>
+              <div style={{ width:22, height:22, borderRadius:"50%", background:c.value, boxShadow:settings.accent===c.value?`0 2px 8px ${c.value}66`:"none" }} />
+              <span style={{ fontSize:10, color: settings.accent===c.value?c.value:"#888", fontWeight:"bold" }}>{c.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 표시 옵션 */}
+      <div style={{ background:"white", borderRadius:14, padding:16, marginBottom:12, boxShadow:"0 2px 8px rgba(0,0,0,0.05)" }}>
+        <p style={{ fontSize:13, fontWeight:"bold", color:"#333", marginBottom:12 }}>표시 옵션</p>
+        {[
+          ["showReading", "단어 암기 — 읽기(ひらがな) 항상 표시"],
+          ["showRomaji", "오십음도 — 로마자 기본 표시"],
+        ].map(([key, label]) => (
+          <div key={key} onClick={() => toggle(key)} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"9px 0", borderBottom:"1px solid #f5f5f5", cursor:"pointer" }}>
+            <span style={{ fontSize:13, color:"#444" }}>{label}</span>
+            <div style={{ width:42, height:24, borderRadius:12, background:settings[key]?settings.accent:"#ddd", position:"relative", transition:"background 0.2s", flexShrink:0 }}>
+              <div style={{ width:18, height:18, borderRadius:"50%", background:"white", position:"absolute", top:3, left:settings[key]?21:3, transition:"left 0.2s", boxShadow:"0 1px 4px rgba(0,0,0,0.2)" }} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 통계 요약 */}
+      <div style={{ background:"white", borderRadius:14, padding:16, marginBottom:12, boxShadow:"0 2px 8px rgba(0,0,0,0.05)" }}>
+        <p style={{ fontSize:13, fontWeight:"bold", color:"#333", marginBottom:10 }}>단어 테스트 통계 요약</p>
+        {quizStats.length === 0 ? (
+          <p style={{ fontSize:12, color:"#bbb" }}>아직 기록이 없어요</p>
+        ) : (
+          <>
+            <div style={{ display:"flex", justifyContent:"space-around", marginBottom:10 }}>
+              {[["총 횟수",`${quizStats.length}회`],["평균",`${Math.round(quizStats.reduce((a,b)=>a+b.pct,0)/quizStats.length)}%`],["최고",`${Math.max(...quizStats.map(s=>s.pct))}%`]].map(([l,v]) => (
+                <div key={l} style={{ textAlign:"center" }}>
+                  <div style={{ fontSize:18, fontWeight:"bold", color:settings.accent }}>{v}</div>
+                  <div style={{ fontSize:10, color:"#aaa" }}>{l}</div>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => setQuizStats([])} style={{ width:"100%", padding:"7px 0", borderRadius:9, border:"1px solid #fdd", background:"#fff5f5", color:"#e63946", fontSize:11, cursor:"pointer" }}>통계 초기화</button>
+          </>
+        )}
+      </div>
+
+      {/* 앱 정보 */}
+      <div style={{ background:"white", borderRadius:14, padding:16, boxShadow:"0 2px 8px rgba(0,0,0,0.05)" }}>
+        <p style={{ fontSize:13, fontWeight:"bold", color:"#333", marginBottom:8 }}>앱 정보</p>
+        <div style={{ fontSize:12, color:"#888", lineHeight:1.8 }}>
+          <div>미래엔 2022개정 고등학교 일본어 I</div>
+          <div>단어 {VOCAB.length}개 · 표현 {PHRASES.length}개</div>
+          <div style={{ marginTop:6, color:"#bbb", fontSize:11 }}>made by 21209 김예성</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ===== MAIN APP =====
+function App() {
+  const [tab, setTab] = useState("hiragana");
+  const [kanaSubTab, setKanaSubTab] = useState("hiragana");
+  const [quizStats, setQuizStats] = useState([]);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settings, setSettings] = useState({
+    accent: "#e63946",
+    showReading: true,
+    showRomaji: true,
+  });
+
+  const tabs = [
+    { id:"hiragana", label:"오십음도", icon:"あ" },
+    { id:"kanaQuiz",  label:"문자퀴즈", icon:"?" },
+    { id:"flashcard", label:"단어암기", icon:"📇" },
+    { id:"vocabQuiz", label:"단어테스트", icon:"✏️" },
+    { id:"phrases",   label:"일상표현", icon:"💬" },
+  ];
+
+  const accent = settings.accent;
+
+  return (
+    <div style={{ maxWidth:480, margin:"0 auto", minHeight:"100vh", background:"#f5f3fc", fontFamily:"'Noto Sans KR', sans-serif", position:"relative", paddingBottom:80 }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Noto+Serif+JP:wght@400;700&display=swap');
+        * { box-sizing:border-box; margin:0; padding:0; }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes slideUp { from{opacity:0;transform:translateY(100%)} to{opacity:1;transform:translateY(0)} }
+        ::-webkit-scrollbar{height:4px} ::-webkit-scrollbar-thumb{background:#ddd;border-radius:2px}
+      `}</style>
+
+      {/* Header */}
+      <div style={{ background:"linear-gradient(135deg,#1a1a2e,#16213e)", padding:"13px 18px 11px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:11 }}>
+          <div style={{ fontSize:25, fontFamily:"'Noto Serif JP', serif", color:accent }}>日</div>
+          <div>
+            <div style={{ fontSize:16, fontWeight:"bold", color:"white", letterSpacing:1 }}>일본어 학습</div>
+            <div style={{ fontSize:9, color:"#555" }}>미래엔 2022개정 · 일본어 I</div>
+          </div>
+        </div>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <div style={{ textAlign:"right" }}>
+            <div style={{ fontSize:8, color:"#333", letterSpacing:0.5 }}>made by</div>
+            <div style={{ fontSize:9, color:"#444", fontWeight:"bold" }}>21209 김예성</div>
+          </div>
+          {/* 설정 버튼 */}
+          <button
+            onClick={() => setSettingsOpen(true)}
+            style={{
+              width:34, height:34, borderRadius:"50%",
+              background:"rgba(255,255,255,0.08)", border:"1.5px solid rgba(255,255,255,0.15)",
+              color:"rgba(255,255,255,0.7)", fontSize:16, cursor:"pointer",
+              display:"flex", alignItems:"center", justifyContent:"center",
+              transition:"all 0.15s",
+            }}
+          >⚙️</button>
+        </div>
+      </div>
+
+      {/* kana sub tab */}
+      {tab === "hiragana" && (
+        <div style={{ background:"white", padding:"9px 14px", display:"flex", gap:7, boxShadow:"0 2px 6px rgba(0,0,0,0.04)" }}>
+          <button onClick={() => setKanaSubTab("hiragana")} style={{ flex:1, padding:"6px 0", borderRadius:8, border:"none", background:kanaSubTab==="hiragana"?accent:"#f0eef8", color:kanaSubTab==="hiragana"?"white":"#555", fontWeight:"bold", fontSize:12, cursor:"pointer" }}>ひらがな</button>
+          <button onClick={() => setKanaSubTab("katakana")} style={{ flex:1, padding:"6px 0", borderRadius:8, border:"none", background:kanaSubTab==="katakana"?accent:"#f0eef8", color:kanaSubTab==="katakana"?"white":"#555", fontWeight:"bold", fontSize:12, cursor:"pointer" }}>カタカナ</button>
+        </div>
+      )}
+
+      {/* Content */}
+      <div style={{ animation:"fadeIn 0.2s ease" }}>
+        {tab==="hiragana" && kanaSubTab==="hiragana" && <KanaGrid data={HIRAGANA} title="히라가나 오십음도" settings={settings} isKatakana={false} />}
+        {tab==="hiragana" && kanaSubTab==="katakana" && <KanaGrid data={KATAKANA} title="가타카나 오십음도" settings={settings} isKatakana={true} />}
+        {tab==="kanaQuiz"  && <KanaQuiz settings={settings} />}
+        {tab==="flashcard" && <Flashcard settings={settings} />}
+        {tab==="vocabQuiz" && <VocabQuiz settings={settings} quizStats={quizStats} setQuizStats={setQuizStats} />}
+        {tab==="phrases"   && <PhrasesTab settings={settings} />}
+      </div>
+
+      {/* Bottom Nav */}
+      <div style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:480, background:"white", borderTop:"1px solid #ece8f6", display:"flex", boxShadow:"0 -4px 14px rgba(0,0,0,0.06)" }}>
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} style={{ flex:1, padding:"9px 2px 11px", border:"none", background:"transparent", cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
+            <span style={{ fontSize:t.icon.length===1&&t.icon!=="?"?19:14, fontFamily:"'Noto Serif JP', serif", color:tab===t.id?accent:"#bbb" }}>{t.icon}</span>
+            <span style={{ fontSize:9, color:tab===t.id?accent:"#bbb", fontWeight:tab===t.id?"bold":"normal" }}>{t.label}</span>
+            {tab===t.id && <div style={{ width:18, height:2, background:accent, borderRadius:1 }} />}
+          </button>
+        ))}
+      </div>
+
+      {/* 설정 모달 오버레이 */}
+      {settingsOpen && (
+        <div
+          onClick={() => setSettingsOpen(false)}
+          style={{
+            position:"fixed", inset:0, background:"rgba(0,0,0,0.45)",
+            zIndex:100, display:"flex", alignItems:"flex-end", justifyContent:"center",
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              width:"100%", maxWidth:480,
+              background:"#f5f3fc",
+              borderRadius:"20px 20px 0 0",
+              maxHeight:"88vh", overflowY:"auto",
+              animation:"slideUp 0.28s ease",
+              boxShadow:"0 -8px 32px rgba(0,0,0,0.18)",
+            }}
+          >
+            {/* 모달 핸들 + 헤더 */}
+            <div style={{ padding:"12px 20px 0", position:"sticky", top:0, background:"#f5f3fc", zIndex:1 }}>
+              <div style={{ width:36, height:4, borderRadius:2, background:"#ddd", margin:"0 auto 14px" }} />
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+                <h2 style={{ fontFamily:"'Noto Serif JP', serif", fontSize:18, color:"#1a1a2e" }}>⚙️ 설정</h2>
+                <button onClick={() => setSettingsOpen(false)} style={{ background:"none", border:"none", fontSize:20, color:"#aaa", cursor:"pointer", lineHeight:1 }}>✕</button>
+              </div>
+            </div>
+
+            <div style={{ padding:"0 20px 32px" }}>
+              <SettingsTab
+                settings={settings}
+                setSettings={setSettings}
+                quizStats={quizStats}
+                setQuizStats={setQuizStats}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+
+  <!-- PWA Service Worker 등록 -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(r => console.log('SW registered:', r.scope))
+          .catch(e => console.log('SW failed:', e));
+      });
+    }
+  </script>
+</body>
+</html>
