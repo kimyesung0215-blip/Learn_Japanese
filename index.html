@@ -537,7 +537,7 @@ function VocabQuiz({settings,vocabList,quizStats,setQuizStats}){
   const [chosen,setChosen]=useState(null);
   const [wrong,setWrong]=useState([]);
   function start(){
-    const qs=shuffle(vocabList).slice(0,15).map(item=>{
+    const qs=vocabList.map(item=>{
       const others=vocabList.filter(v=>v.jp!==item.jp);
       return{item,options:shuffle([item,...shuffle(others).slice(0,3)])};
     });
@@ -550,9 +550,9 @@ function VocabQuiz({settings,vocabList,quizStats,setQuizStats}){
     if(isRight)setScore(s=>s+1); else setWrong(w=>[...w,questions[current].item]);
     setTimeout(()=>{
       if(current+1>=questions.length){
-        const pct=Math.round((newScore/15)*100);
+        const pct=Math.round((newScore/questions.length)*100);
         const now=new Date();
-        setQuizStats(prev=>[{date:`${now.getMonth()+1}/${now.getDate()}`,score:newScore,total:15,pct,dir:quizDir==="jp2kr"?"일→한":"한→일"},...prev].slice(0,20));
+        setQuizStats(prev=>[{date:`${now.getMonth()+1}/${now.getDate()}`,score:newScore,total:questions.length,pct,dir:quizDir==="jp2kr"?"일→한":"한→일"},...prev].slice(0,20));
         setMode("result");
       }else{setCurrent(c=>c+1);setChosen(null);}
     },750);
