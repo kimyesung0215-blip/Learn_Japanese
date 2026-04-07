@@ -526,81 +526,6 @@ function KanaQuiz({settings}){
   );
 }
 
-// ===================== FLASHCARD =====================
-function Flashcard({settings,vocabList}){
-  const accent=settings.accent;
-  const dailyCards=useMemo(()=>seededShuffle(vocabList),[vocabList]);
-  const [idx,setIdx]=useState(0);
-  const [flipped,setFlipped]=useState(false);
-  const [known,setKnown]=useState(new Set());
-  const [unknown,setUnknown]=useState(new Set());
-  const [done,setDone]=useState(false);
-  const total=dailyCards.length;
-  const card=dailyCards[idx];
-  const today=new Date();
-  const dateStr=`${today.getMonth()+1}월 ${today.getDate()}일`;
-  function goNext(){if(idx<total-1){setIdx(i=>i+1);setFlipped(false);}else setDone(true);}
-  function goPrev(){if(idx>0){setIdx(i=>i-1);setFlipped(false);}}
-  function markKnown(){setKnown(s=>new Set([...s,idx]));setUnknown(s=>{const n=new Set(s);n.delete(idx);return n;});goNext();}
-  function markUnknown(){setUnknown(s=>new Set([...s,idx]));setKnown(s=>{const n=new Set(s);n.delete(idx);return n;});goNext();}
-  if(done)return(
-    <div style={{padding:20,textAlign:"center"}}>
-      <div style={{fontSize:48,marginBottom:10}}>✅</div>
-      <h2 style={{fontFamily:"'Noto Serif JP',serif",color:"#1a1a2e",marginBottom:4}}>오늘 학습 완료!</h2>
-      <p style={{color:"#888",fontSize:12,marginBottom:16}}>{dateStr}</p>
-      <div style={{display:"flex",justifyContent:"center",gap:14,marginBottom:16}}>
-        <div style={{background:"#d4f7d4",borderRadius:12,padding:"12px 20px"}}><div style={{fontSize:26,fontWeight:"bold",color:"#2e7d32"}}>{known.size}</div><div style={{fontSize:11,color:"#555"}}>알아 ✓</div></div>
-        <div style={{background:"#ffd4d4",borderRadius:12,padding:"12px 20px"}}><div style={{fontSize:26,fontWeight:"bold",color:"#c62828"}}>{unknown.size}</div><div style={{fontSize:11,color:"#555"}}>모름 ✗</div></div>
-      </div>
-      {unknown.size>0&&<div style={{background:"white",borderRadius:12,padding:14,marginBottom:14,textAlign:"left",boxShadow:"0 2px 8px rgba(0,0,0,0.05)"}}>
-        <p style={{fontSize:12,fontWeight:"bold",color:accent,marginBottom:8}}>복습 필요 단어</p>
-        {[...unknown].map(i=>(
-          <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 0",borderBottom:"1px solid #f5f5f5"}}>
-            <span style={{fontFamily:"'Noto Serif JP',serif",fontSize:15}}>{dailyCards[i].jp}</span>
-            <span style={{fontSize:11,color:"#aaa"}}>{dailyCards[i].read}</span>
-            <span style={{fontSize:12,color:accent,fontWeight:"bold"}}>{dailyCards[i].kr}</span>
-          </div>
-        ))}
-      </div>}
-      <button onClick={()=>{setIdx(0);setFlipped(false);setDone(false);setKnown(new Set());setUnknown(new Set());}} style={{background:`linear-gradient(135deg,${accent},${accent}cc)`,color:"white",border:"none",borderRadius:12,padding:"11px 28px",fontSize:14,fontWeight:"bold",cursor:"pointer"}}>다시 시작</button>
-    </div>
-  );
-  return(
-    <div style={{padding:20}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-        <span style={{fontSize:11,color:"#888"}}>📅 {dateStr}</span>
-        <div style={{display:"flex",gap:5}}>
-          <span style={{fontSize:11,background:"#d4f7d4",borderRadius:20,padding:"2px 9px",color:"#2e7d32"}}>✓ {known.size}</span>
-          <span style={{fontSize:11,background:"#ffd4d4",borderRadius:20,padding:"2px 9px",color:"#c62828"}}>✗ {unknown.size}</span>
-        </div>
-      </div>
-      <div style={{background:"#e8e0f0",width:"100%",height:3,borderRadius:2,marginBottom:14}}>
-        <div style={{background:accent,width:`${(idx/total)*100}%`,height:"100%",borderRadius:2,transition:"width 0.3s"}}/>
-      </div>
-      <div onClick={()=>setFlipped(f=>!f)} style={{background:flipped?"linear-gradient(135deg,#1a1a2e,#16213e)":"white",borderRadius:18,padding:"34px 22px",textAlign:"center",minHeight:160,cursor:"pointer",boxShadow:flipped?"0 8px 28px rgba(0,0,0,0.2)":"0 4px 14px rgba(0,0,0,0.07)",transition:"all 0.3s",marginBottom:12,display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",border:known.has(idx)?"2px solid #4caf50":unknown.has(idx)?`2px solid ${accent}`:"2px solid transparent"}}>
-        {!flipped?(<>
-          <div style={{fontSize:40,fontFamily:"'Noto Serif JP',serif",color:"#1a1a2e"}}>{card.jp}</div>
-          <div style={{fontSize:13,color:"#bbb",marginTop:4}}>{card.read}</div>
-          <div style={{fontSize:10,color:"#ccc",marginTop:10}}>터치해서 뜻 보기</div>
-        </>):(<>
-          <div style={{fontSize:28,fontFamily:"'Noto Serif JP',serif",color:"white"}}>{card.jp}</div>
-          <div style={{fontSize:12,color:"#666",marginTop:3}}>{card.read}</div>
-          <div style={{fontSize:24,color:accent,fontWeight:"bold",marginTop:10}}>{card.kr}</div>
-        </>)}
-      </div>
-      <div style={{display:"flex",alignItems:"center",gap:7}}>
-        <button onClick={goPrev} disabled={idx===0} style={{width:42,height:42,borderRadius:11,border:"2px solid #e8e0f0",background:"white",fontSize:17,cursor:idx===0?"not-allowed":"pointer",color:idx===0?"#ddd":"#555",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>←</button>
-        {flipped?(<>
-          <button onClick={markUnknown} style={{flex:1,padding:"10px 0",borderRadius:11,border:"none",background:"#ffd4d4",color:"#c62828",fontWeight:"bold",fontSize:13,cursor:"pointer"}}>모르겠어 ✗</button>
-          <button onClick={markKnown} style={{flex:1,padding:"10px 0",borderRadius:11,border:"none",background:"#d4f7d4",color:"#2e7d32",fontWeight:"bold",fontSize:13,cursor:"pointer"}}>알아! ✓</button>
-        </>):(<button onClick={goNext} style={{flex:1,padding:"10px 0",borderRadius:11,border:"2px solid #e8e0f0",background:"white",color:"#999",fontSize:12,cursor:"pointer"}}>그냥 넘기기</button>)}
-        <button onClick={goNext} style={{width:42,height:42,borderRadius:11,border:"2px solid #e8e0f0",background:"white",fontSize:17,cursor:"pointer",color:"#555",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>→</button>
-      </div>
-      <div style={{textAlign:"center",fontSize:11,color:"#ccc",marginTop:8}}>{idx+1} / {total}</div>
-    </div>
-  );
-}
-
 // ===================== VOCAB QUIZ =====================
 function VocabQuiz({settings,vocabList,quizStats,setQuizStats}){
   const accent=settings.accent;
@@ -668,13 +593,22 @@ function VocabQuiz({settings,vocabList,quizStats,setQuizStats}){
       </>}
     </div>);
   }
-  if(mode==="select")return(
+  if(mode==="select"){
+  const today=new Date();
+  const dateStr=`${today.getMonth()+1}월 ${today.getDate()}일`;
+  return(
     <div style={{padding:20}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
         <h2 style={{fontFamily:"'Noto Serif JP',serif",fontSize:19,color:"#1a1a2e"}}>단어 테스트</h2>
         <button onClick={()=>setMode("stats")} style={{background:"white",border:`1.5px solid ${accent}44`,borderRadius:10,padding:"5px 12px",fontSize:11,color:accent,fontWeight:"bold",cursor:"pointer"}}>📊 통계</button>
       </div>
-      <p style={{fontSize:11,color:"#aaa",marginBottom:12}}>{vocabList.length}개 단어 출제</p>
+      <div style={{background:accent+"18",borderRadius:12,padding:"10px 14px",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
+        <span style={{fontSize:16}}>📅</span>
+        <div>
+          <div style={{fontSize:12,fontWeight:"bold",color:accent}}>{dateStr} 오늘의 단어</div>
+          <div style={{fontSize:11,color:"#888"}}>{vocabList.length}개 — 단어장 암기와 동일한 범위</div>
+        </div>
+      </div>
       {quizStats.length>0&&<div style={{background:"white",borderRadius:12,padding:12,marginBottom:12,boxShadow:"0 2px 8px rgba(0,0,0,0.05)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <span style={{fontSize:12,color:"#888"}}>최근 점수</span>
         <span style={{fontSize:14,fontWeight:"bold",color:quizStats[0].pct>=80?"#4caf50":quizStats[0].pct>=60?accent:"#e63946"}}>{quizStats[0].score}/{quizStats[0].total} ({quizStats[0].pct}%)</span>
@@ -689,7 +623,7 @@ function VocabQuiz({settings,vocabList,quizStats,setQuizStats}){
       </div>
       <button onClick={start} style={{width:"100%",background:`linear-gradient(135deg,${accent},${accent}cc)`,color:"white",border:"none",borderRadius:12,padding:"13px 0",fontSize:15,fontWeight:"bold",cursor:"pointer"}}>테스트 시작 📝</button>
     </div>
-  );
+  );}
   if(mode==="result")return(
     <div style={{padding:20,textAlign:"center"}}>
       <div style={{fontSize:48,marginBottom:8}}>{score>=13?"🏆":score>=10?"👍":"📚"}</div>
@@ -739,39 +673,186 @@ function VocabQuiz({settings,vocabList,quizStats,setQuizStats}){
   );
 }
 
-// ===================== 단어장 (모아보기) =====================
-function VocabList({settings,vocabList}){
-  const accent=settings.accent;
-  const [search,setSearch]=useState("");
-  const filtered=vocabList.filter(v=>v.jp.includes(search)||v.read.includes(search)||v.kr.includes(search));
-  return(
-    <div style={{padding:16}}>
-      <h2 style={{fontFamily:"'Noto Serif JP',serif",fontSize:18,color:"#1a1a2e",marginBottom:12,textAlign:"center"}}>단어장</h2>
-      {/* 검색 */}
-      <div style={{background:"white",borderRadius:12,padding:"8px 12px",marginBottom:12,boxShadow:"0 2px 8px rgba(0,0,0,0.05)",display:"flex",alignItems:"center",gap:8}}>
-        <span style={{fontSize:14,color:"#bbb"}}>🔍</span>
-        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="일본어 / 읽기 / 뜻 검색..." style={{border:"none",outline:"none",fontSize:13,flex:1,color:"#333",background:"transparent"}}/>
-        {search&&<button onClick={()=>setSearch("")} style={{border:"none",background:"none",color:"#bbb",cursor:"pointer",fontSize:14}}>✕</button>}
+// ===================== 단어장 + 암기 통합 탭 =====================
+// 오늘의 단어: 날짜 기반으로 전체 단어에서 순차 20개 추출
+function getTodayWords(vocabList) {
+  const today = new Date();
+  const dayNum = Math.floor(today.getTime() / 86400000); // 날짜별 고정값
+  const total = vocabList.length;
+  const size = Math.min(20, total);
+  const start = (dayNum * 20) % total;
+  const result = [];
+  for (let i = 0; i < size; i++) result.push(vocabList[(start + i) % total]);
+  return result;
+}
+
+function VocabTab({ settings, vocabList }) {
+  const accent = settings.accent;
+  const [view, setView] = useState("list"); // list | study_today | study_all
+  const [search, setSearch] = useState("");
+
+  // 오늘의 단어 (날짜 고정, 순차)
+  const todayWords = useMemo(() => getTodayWords(vocabList), [vocabList]);
+  const today = new Date();
+  const dateStr = `${today.getMonth()+1}월 ${today.getDate()}일`;
+
+  // 전체 순차 암기: 인덱스 기반 (랜덤 없음)
+  const allWords = vocabList; // 원래 순서 그대로
+
+  const filtered = vocabList.filter(v =>
+    v.jp.includes(search) || v.read.includes(search) || v.kr.includes(search)
+  );
+
+  if (view === "study_today") return <FlashcardStudy settings={settings} cards={todayWords} title={`오늘의 단어 (${dateStr})`} onBack={() => setView("list")} />;
+  if (view === "study_all") return <FlashcardStudy settings={settings} cards={allWords} title="전체 순차 암기" onBack={() => setView("list")} sequential />;
+
+  return (
+    <div style={{ padding: 16 }}>
+      <h2 style={{ fontFamily:"'Noto Serif JP',serif", fontSize:18, color:"#1a1a2e", marginBottom:12, textAlign:"center" }}>단어장</h2>
+
+      {/* 암기 진입 버튼 */}
+      <div style={{ display:"flex", gap:8, marginBottom:14 }}>
+        <button onClick={() => setView("study_today")} style={{
+          flex:1, padding:"12px 0", borderRadius:12, border:"none", cursor:"pointer",
+          background:`linear-gradient(135deg,${accent},${accent}cc)`, color:"white",
+          fontWeight:"bold", fontSize:13,
+        }}>
+          📅 오늘의 단어<br/>
+          <span style={{ fontSize:10, fontWeight:"normal", opacity:0.85 }}>{todayWords.length}개 · {dateStr}</span>
+        </button>
+        <button onClick={() => setView("study_all")} style={{
+          flex:1, padding:"12px 0", borderRadius:12, border:"none", cursor:"pointer",
+          background:"white", color:accent, fontWeight:"bold", fontSize:13,
+          border:`2px solid ${accent}44`, boxShadow:"0 2px 8px rgba(0,0,0,0.06)",
+        }}>
+          📚 전체 순차 암기<br/>
+          <span style={{ fontSize:10, fontWeight:"normal", color:"#aaa" }}>{vocabList.length}개 전체</span>
+        </button>
       </div>
-      <p style={{fontSize:11,color:"#aaa",marginBottom:10}}>{filtered.length}개 단어</p>
+
+      {/* 검색 */}
+      <div style={{ background:"white", borderRadius:12, padding:"8px 12px", marginBottom:10, boxShadow:"0 2px 8px rgba(0,0,0,0.05)", display:"flex", alignItems:"center", gap:8 }}>
+        <span style={{ fontSize:14, color:"#bbb" }}>🔍</span>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="일본어 / 읽기 / 뜻 검색..." style={{ border:"none", outline:"none", fontSize:13, flex:1, color:"#333", background:"transparent" }}/>
+        {search && <button onClick={()=>setSearch("")} style={{ border:"none", background:"none", color:"#bbb", cursor:"pointer", fontSize:14 }}>✕</button>}
+      </div>
+      <p style={{ fontSize:11, color:"#aaa", marginBottom:8 }}>{filtered.length}개 단어</p>
+
       {/* 단어 목록 */}
-      <div style={{background:"white",borderRadius:12,overflow:"hidden",boxShadow:"0 2px 8px rgba(0,0,0,0.05)"}}>
-        {/* 헤더 */}
-        <div style={{display:"grid",gridTemplateColumns:"2fr 2fr 3fr",background:"#f8f6ff",padding:"8px 14px",borderBottom:"1px solid #ece8f6"}}>
-          <span style={{fontSize:11,color:"#888",fontWeight:"bold"}}>일본어</span>
-          <span style={{fontSize:11,color:"#888",fontWeight:"bold"}}>읽기</span>
-          <span style={{fontSize:11,color:"#888",fontWeight:"bold"}}>뜻</span>
+      <div style={{ background:"white", borderRadius:12, overflow:"hidden", boxShadow:"0 2px 8px rgba(0,0,0,0.05)" }}>
+        <div style={{ display:"grid", gridTemplateColumns:"2fr 2fr 3fr", background:"#f8f6ff", padding:"8px 14px", borderBottom:"1px solid #ece8f6" }}>
+          <span style={{ fontSize:11, color:"#888", fontWeight:"bold" }}>일본어</span>
+          <span style={{ fontSize:11, color:"#888", fontWeight:"bold" }}>읽기</span>
+          <span style={{ fontSize:11, color:"#888", fontWeight:"bold" }}>뜻</span>
         </div>
-        {filtered.length===0?<div style={{padding:"24px 0",textAlign:"center",color:"#bbb",fontSize:13}}>검색 결과가 없어요</div>:
-          filtered.map((v,i)=>(
-            <div key={i} style={{display:"grid",gridTemplateColumns:"2fr 2fr 3fr",padding:"9px 14px",borderBottom:i<filtered.length-1?"1px solid #f5f5f5":"none",alignItems:"center"}}>
-              <span style={{fontFamily:"'Noto Serif JP',serif",fontSize:16,color:"#1a1a2e"}}>{v.jp}</span>
-              <span style={{fontSize:11,color:"#888"}}>{v.read}</span>
-              <span style={{fontSize:12,color:"#444"}}>{v.kr}</span>
+        {filtered.length === 0
+          ? <div style={{ padding:"24px 0", textAlign:"center", color:"#bbb", fontSize:13 }}>검색 결과 없음</div>
+          : filtered.map((v, i) => (
+            <div key={i} style={{ display:"grid", gridTemplateColumns:"2fr 2fr 3fr", padding:"9px 14px", borderBottom: i < filtered.length-1 ? "1px solid #f5f5f5" : "none", alignItems:"center" }}>
+              <span style={{ fontFamily:"'Noto Serif JP',serif", fontSize:16, color:"#1a1a2e" }}>{v.jp}</span>
+              <span style={{ fontSize:11, color:"#888" }}>{v.read}</span>
+              <span style={{ fontSize:12, color:"#444" }}>{v.kr}</span>
             </div>
           ))
         }
       </div>
+    </div>
+  );
+}
+
+// 암기 카드 (오늘의 단어 / 전체 순차 공용)
+function FlashcardStudy({ settings, cards, title, onBack, sequential }) {
+  const accent = settings.accent;
+  const [idx, setIdx] = useState(0);
+  const [flipped, setFlipped] = useState(false);
+  const [known, setKnown] = useState(new Set());
+  const [unknown, setUnknown] = useState(new Set());
+  const [done, setDone] = useState(false);
+  const total = cards.length;
+  const card = cards[idx];
+
+  function goNext() { if (idx < total-1) { setIdx(i=>i+1); setFlipped(false); } else setDone(true); }
+  function goPrev() { if (idx > 0) { setIdx(i=>i-1); setFlipped(false); } }
+  function markKnown() { setKnown(s=>new Set([...s,idx])); setUnknown(s=>{const n=new Set(s);n.delete(idx);return n;}); goNext(); }
+  function markUnknown() { setUnknown(s=>new Set([...s,idx])); setKnown(s=>{const n=new Set(s);n.delete(idx);return n;}); goNext(); }
+
+  if (done) return (
+    <div style={{ padding:20, textAlign:"center" }}>
+      <div style={{ fontSize:48, marginBottom:10 }}>✅</div>
+      <h2 style={{ fontFamily:"'Noto Serif JP',serif", color:"#1a1a2e", marginBottom:4 }}>완료!</h2>
+      <p style={{ color:"#888", fontSize:12, marginBottom:16 }}>{title}</p>
+      <div style={{ display:"flex", justifyContent:"center", gap:14, marginBottom:16 }}>
+        <div style={{ background:"#d4f7d4", borderRadius:12, padding:"12px 20px" }}><div style={{ fontSize:26, fontWeight:"bold", color:"#2e7d32" }}>{known.size}</div><div style={{ fontSize:11, color:"#555" }}>알아 ✓</div></div>
+        <div style={{ background:"#ffd4d4", borderRadius:12, padding:"12px 20px" }}><div style={{ fontSize:26, fontWeight:"bold", color:"#c62828" }}>{unknown.size}</div><div style={{ fontSize:11, color:"#555" }}>모름 ✗</div></div>
+      </div>
+      {unknown.size > 0 && (
+        <div style={{ background:"white", borderRadius:12, padding:14, marginBottom:14, textAlign:"left", boxShadow:"0 2px 8px rgba(0,0,0,0.05)" }}>
+          <p style={{ fontSize:12, fontWeight:"bold", color:accent, marginBottom:8 }}>복습 필요</p>
+          {[...unknown].map(i => (
+            <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"5px 0", borderBottom:"1px solid #f5f5f5" }}>
+              <span style={{ fontFamily:"'Noto Serif JP',serif", fontSize:15 }}>{cards[i].jp}</span>
+              <span style={{ fontSize:11, color:"#aaa" }}>{cards[i].read}</span>
+              <span style={{ fontSize:12, color:accent, fontWeight:"bold" }}>{cards[i].kr}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      <div style={{ display:"flex", gap:8 }}>
+        <button onClick={onBack} style={{ flex:1, background:"#f0eef8", color:"#555", border:"none", borderRadius:12, padding:"11px 0", fontSize:13, fontWeight:"bold", cursor:"pointer" }}>← 단어장</button>
+        <button onClick={() => { setIdx(0); setFlipped(false); setDone(false); setKnown(new Set()); setUnknown(new Set()); }} style={{ flex:1, background:`linear-gradient(135deg,${accent},${accent}cc)`, color:"white", border:"none", borderRadius:12, padding:"11px 0", fontSize:13, fontWeight:"bold", cursor:"pointer" }}>다시 시작</button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ padding:20 }}>
+      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
+        <button onClick={onBack} style={{ background:"none", border:"none", fontSize:20, cursor:"pointer", color:"#888" }}>←</button>
+        <span style={{ fontSize:13, color:"#888", flex:1 }}>{title}</span>
+        <div style={{ display:"flex", gap:5 }}>
+          <span style={{ fontSize:11, background:"#d4f7d4", borderRadius:20, padding:"2px 9px", color:"#2e7d32" }}>✓ {known.size}</span>
+          <span style={{ fontSize:11, background:"#ffd4d4", borderRadius:20, padding:"2px 9px", color:"#c62828" }}>✗ {unknown.size}</span>
+        </div>
+      </div>
+
+      {/* 진행 바 */}
+      <div style={{ background:"#e8e0f0", width:"100%", height:3, borderRadius:2, marginBottom:14 }}>
+        <div style={{ background:accent, width:`${(idx/total)*100}%`, height:"100%", borderRadius:2, transition:"width 0.3s" }}/>
+      </div>
+
+      {/* 카드 */}
+      <div onClick={()=>setFlipped(f=>!f)} style={{
+        background: flipped ? "linear-gradient(135deg,#1a1a2e,#16213e)" : "white",
+        borderRadius:18, padding:"34px 22px", textAlign:"center", minHeight:160, cursor:"pointer",
+        boxShadow: flipped ? "0 8px 28px rgba(0,0,0,0.2)" : "0 4px 14px rgba(0,0,0,0.07)",
+        transition:"all 0.3s", marginBottom:12,
+        display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"center",
+        border: known.has(idx) ? "2px solid #4caf50" : unknown.has(idx) ? `2px solid ${accent}` : "2px solid transparent",
+      }}>
+        {!flipped ? (<>
+          {sequential && <div style={{ fontSize:10, color:"#ccc", marginBottom:6 }}>#{idx+1}</div>}
+          <div style={{ fontSize:40, fontFamily:"'Noto Serif JP',serif", color:"#1a1a2e" }}>{card.jp}</div>
+          <div style={{ fontSize:13, color:"#bbb", marginTop:4 }}>{card.read}</div>
+          <div style={{ fontSize:10, color:"#ccc", marginTop:10 }}>터치해서 뜻 보기</div>
+        </>) : (<>
+          <div style={{ fontSize:28, fontFamily:"'Noto Serif JP',serif", color:"white" }}>{card.jp}</div>
+          <div style={{ fontSize:12, color:"#666", marginTop:3 }}>{card.read}</div>
+          <div style={{ fontSize:24, color:accent, fontWeight:"bold", marginTop:10 }}>{card.kr}</div>
+        </>)}
+      </div>
+
+      {/* 버튼 */}
+      <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+        <button onClick={goPrev} disabled={idx===0} style={{ width:42, height:42, borderRadius:11, border:"2px solid #e8e0f0", background:"white", fontSize:17, cursor:idx===0?"not-allowed":"pointer", color:idx===0?"#ddd":"#555", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>←</button>
+        {flipped ? (<>
+          <button onClick={markUnknown} style={{ flex:1, padding:"10px 0", borderRadius:11, border:"none", background:"#ffd4d4", color:"#c62828", fontWeight:"bold", fontSize:13, cursor:"pointer" }}>모르겠어 ✗</button>
+          <button onClick={markKnown} style={{ flex:1, padding:"10px 0", borderRadius:11, border:"none", background:"#d4f7d4", color:"#2e7d32", fontWeight:"bold", fontSize:13, cursor:"pointer" }}>알아! ✓</button>
+        </>) : (
+          <button onClick={goNext} style={{ flex:1, padding:"10px 0", borderRadius:11, border:"2px solid #e8e0f0", background:"white", color:"#999", fontSize:12, cursor:"pointer" }}>그냥 넘기기</button>
+        )}
+        <button onClick={goNext} style={{ width:42, height:42, borderRadius:11, border:"2px solid #e8e0f0", background:"white", fontSize:17, cursor:"pointer", color:"#555", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>→</button>
+      </div>
+      <div style={{ textAlign:"center", fontSize:11, color:"#ccc", marginTop:8 }}>{idx+1} / {total}</div>
     </div>
   );
 }
@@ -874,8 +955,7 @@ function App(){
   const tabs=[
     {id:"hiragana",label:"오십음도",icon:"あ"},
     {id:"kanaQuiz",label:"문자퀴즈",icon:"?"},
-    {id:"vocabList",label:"단어장",icon:"📖"},
-    {id:"flashcard",label:"단어암기",icon:"📇"},
+    {id:"vocab",label:"단어장",icon:"📖"},
     {id:"vocabQuiz",label:"단어테스트",icon:"✏️"},
     {id:"phrases",label:"일상표현",icon:"💬"},
   ];
@@ -915,7 +995,7 @@ function App(){
       </div>
 
       {/* 모드 안내 배너 */}
-      {(tab==="flashcard"||tab==="vocabQuiz"||tab==="vocabList")&&
+      {(tab==="vocab"||tab==="vocabQuiz")&&
         <div style={{background:appMode==="exam"?"#fff3f3":"#f0f4ff",padding:"6px 16px",display:"flex",alignItems:"center",gap:6,borderBottom:"1px solid #ece8f6"}}>
           <span style={{fontSize:11,color:appMode==="exam"?"#e63946":"#4361ee",fontWeight:"bold"}}>{appMode==="exam"?"📝 중간고사 모드":"🌏 일상 모드"}</span>
           <span style={{fontSize:10,color:"#888"}}>— {vocabList.length}개 단어</span>
@@ -935,9 +1015,8 @@ function App(){
         {tab==="hiragana"&&kanaSubTab==="hiragana"&&<KanaGrid data={HIRAGANA} title="히라가나 오십음도" settings={settings} isKatakana={false}/>}
         {tab==="hiragana"&&kanaSubTab==="katakana"&&<KanaGrid data={KATAKANA} title="가타카나 오십음도" settings={settings} isKatakana={true}/>}
         {tab==="kanaQuiz"&&<KanaQuiz settings={settings}/>}
-        {tab==="vocabList"&&<VocabList settings={settings} vocabList={vocabList}/>}
-        {tab==="flashcard"&&<Flashcard settings={settings} vocabList={vocabList}/>}
-        {tab==="vocabQuiz"&&<VocabQuiz settings={settings} vocabList={vocabList} quizStats={quizStats} setQuizStats={setQuizStats}/>}
+        {tab==="vocab"&&<VocabTab settings={settings} vocabList={vocabList}/>}
+        {tab==="vocabQuiz"&&<VocabQuiz settings={settings} vocabList={getTodayWords(vocabList)} quizStats={quizStats} setQuizStats={setQuizStats}/>}
         {tab==="phrases"&&<PhrasesTab settings={settings}/>}
       </div>
 
